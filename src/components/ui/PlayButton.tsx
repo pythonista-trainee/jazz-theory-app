@@ -37,10 +37,13 @@ export function PlayButton({ notes, type = "chord", bpm = 120, label }: Props) {
         setTimeout(() => { synth.dispose(); setPlaying(false); }, durMs);
       } else {
         const now = Tone.now();
+        // 音符の間隔を固定し、発音時間はその70%に制限して音が繋がらないようにする
+        const noteIntervalSec = beatSec * 0.55;
+        const noteDurSec = noteIntervalSec * 0.7;
         scientific.forEach((n, i) => {
-          synth.triggerAttackRelease(n, inst.scaleDuration, now + i * beatSec * 0.5);
+          synth.triggerAttackRelease(n, noteDurSec, now + i * noteIntervalSec);
         });
-        const totalMs = scientific.length * beatSec * 0.5 * 1000 + 800;
+        const totalMs = scientific.length * noteIntervalSec * 1000 + 800;
         setTimeout(() => { synth.dispose(); setPlaying(false); }, totalMs);
       }
     } catch {

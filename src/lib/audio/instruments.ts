@@ -146,7 +146,7 @@ export const INSTRUMENTS: InstrumentDef[] = [
   },
 ];
 
-export const DEFAULT_INSTRUMENT_ID: InstrumentId = "piano";
+export const DEFAULT_INSTRUMENT_ID: InstrumentId = "organ";
 
 export function getInstrument(id: InstrumentId): InstrumentDef {
   return INSTRUMENTS.find((i) => i.id === id) ?? INSTRUMENTS[0];
