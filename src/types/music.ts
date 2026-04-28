@@ -64,18 +64,20 @@ export interface LickNote {
   note: NoteName;
   octave: Octave;
   duration: Duration;
+  /** True for notes belonging to a triplet group (3 notes occupy 2 eighth-note slots) */
+  triplet?: boolean;
 }
 
 export interface Lick {
   id: string;
   title: string;
+  artist: string;
   targetChord: Chord;
   scale: Scale;
   notes: LickNote[];
-  /** ABC notation string for VexFlow / rendering */
   abc: string;
   bpm: number;
-  /** Beat offset before the phrase starts (0 = downbeat, 0.5 = off-beat pickup) */
+  /** Beat offset before phrase starts (0 = downbeat, 0.5 = off-beat pickup) */
   startBeat: number;
 }
 

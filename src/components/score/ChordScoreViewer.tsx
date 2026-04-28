@@ -2,12 +2,12 @@
 
 import { useEffect, useRef } from "react";
 import { assignOctaves } from "@/lib/theory/noteFormat";
+import { useContainerWidth } from "@/hooks/useContainerWidth";
 
 interface Props {
-  /** Note names without octave, e.g. ["D","F","A","C"] */
   notes: string[];
-  /** "chord" = stacked, "scale" = sequential */
   mode?: "chord" | "scale";
+  /** Optional max-width cap (pixels). Component fills container up to this value. */
   width?: number;
   height?: number;
 }
@@ -15,36 +15,37 @@ interface Props {
 export function ChordScoreViewer({
   notes,
   mode = "chord",
-  width = 320,
+  width: maxWidth,
   height = 140,
 }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const vfRef = useRef<HTMLDivElement>(null);
+  const containerWidth = useContainerWidth(wrapperRef);
+
+  // Clamp to maxWidth if provided
+  const renderWidth = maxWidth ? Math.min(containerWidth, maxWidth) : containerWidth;
 
   useEffect(() => {
-    if (!containerRef.current || notes.length === 0) return;
+    if (!vfRef.current || renderWidth < 50 || notes.length === 0) return;
     let cancelled = false;
 
     async function render() {
       const VF = await import("vexflow").then((m) => m.default ?? m);
-      if (cancelled || !containerRef.current) return;
+      if (cancelled || !vfRef.current) return;
 
-      containerRef.current.innerHTML = "";
+      vfRef.current.innerHTML = "";
 
       try {
         const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental } = VF;
 
-        const renderer = new Renderer(
-          containerRef.current,
-          Renderer.Backends.SVG
-        );
-        renderer.resize(width, height);
+        const renderer = new Renderer(vfRef.current, Renderer.Backends.SVG);
+        renderer.resize(renderWidth, height);
         const ctx = renderer.getContext();
 
         const scientific = assignOctaves(notes);
         const vfKeys = scientific.map(toVFKey);
 
         let staveNotes: any[];
-
         if (mode === "chord") {
           const sn = new StaveNote({ keys: vfKeys, duration: "w" });
           addAccidentals(sn, notes, Accidental);
@@ -57,7 +58,7 @@ export function ChordScoreViewer({
           });
         }
 
-        const stave = new Stave(10, 20, width - 20);
+        const stave = new Stave(10, 20, renderWidth - 20);
         stave.addClef("treble");
         stave.setContext(ctx).draw();
 
@@ -68,31 +69,26 @@ export function ChordScoreViewer({
         voice.setMode(Voice.Mode.SOFT);
         voice.addTickables(staveNotes);
 
-        new Formatter().joinVoices([voice]).format([voice], width - 60);
+        new Formatter().joinVoices([voice]).format([voice], renderWidth - 60);
         voice.draw(ctx, stave);
-      } catch (e) {
-        if (containerRef.current) {
-          containerRef.current.innerHTML = `<p style="color:#6b7280;padding:8px;font-size:12px">${notes.join(" ")}</p>`;
+      } catch {
+        if (vfRef.current) {
+          vfRef.current.innerHTML = `<p style="color:#666;padding:8px;font-size:12px">${notes.join(" ")}</p>`;
         }
       }
     }
 
     render();
     return () => { cancelled = true; };
-  }, [notes, mode, width, height]);
+  }, [notes, mode, renderWidth, height]);
 
   return (
-    <div
-      ref={containerRef}
-      className="rounded-xl overflow-hidden bg-white"
-      style={{ minHeight: height, width }}
-    />
+    <div ref={wrapperRef} className="w-full rounded-xl overflow-hidden bg-white" style={{ minHeight: height }}>
+      <div ref={vfRef} />
+    </div>
   );
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-/** "F#4" → "f#/4",  "Bb4" → "bb/4" */
 function toVFKey(scientific: string): string {
   const match = scientific.match(/^([A-G][#b]?)(\d)$/);
   if (!match) return "c/4";

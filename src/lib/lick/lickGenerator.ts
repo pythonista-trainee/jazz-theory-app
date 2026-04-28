@@ -1,111 +1,258 @@
 /**
- * Lick Generator — bebop-style jazz phrases with swing feel.
+ * Lick Generator — artist-attributed jazz phrases with triplets & swing.
  *
- * Design principles:
- *  - Chord tones on strong beats (1, 3 and their "ands")
- *  - Chromatic approach notes on weak beats
- *  - Pickup starts (startBeat > 0) for authentic jazz phrasing
- *  - Mixed durations weighted toward eighth notes
+ * Each pattern has a startBeat (pickup offset) and total note beats
+ * that together sum to exactly 4 beats.
  */
 import type { Chord, Scale, Lick, LickNote, Duration, Octave } from "@/types/music";
 
-// ── Patterns (scale degree indices, 0-based) ──────────────────────────────────
-// Patterns are designed to resolve to chord tones on the downbeat (index 0 or 2)
-const LICK_PATTERNS: { degrees: number[]; durations: Duration[] }[] = [
-  // Bebop descending phrase — classic II-V resolution
+interface NoteTemplate {
+  degree: number;
+  duration: Duration;
+  triplet?: boolean;
+}
+
+interface LickPattern {
+  artist: string;
+  title: string;
+  startBeat: number; // silent beats before phrase
+  templates: NoteTemplate[];
+}
+
+// ── Artist-attributed pattern library ────────────────────────────────────────
+// Degrees are scale indices (0=root, 2=3rd, 4=5th, 6=7th).
+// Note beats + startBeat must equal 4.
+const PATTERNS: LickPattern[] = [
+  // ── John Coltrane ──────────────────────────────────────────────────────────
   {
-    degrees: [6, 5, 4, 3, 2, 1, 0, 6],
-    durations: ["eighth","eighth","eighth","eighth","eighth","eighth","quarter","quarter"],
+    artist: "ジョン・コルトレーン",
+    title: "シーツ・オブ・サウンド",
+    startBeat: 0,
+    // 12 triplet 8ths = 4 beats
+    templates: [
+      { degree:0, duration:"eighth", triplet:true },
+      { degree:1, duration:"eighth", triplet:true },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:3, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:5, duration:"eighth", triplet:true },
+      { degree:6, duration:"eighth", triplet:true },
+      { degree:5, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:3, duration:"eighth", triplet:true },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:0, duration:"eighth", triplet:true },
+    ],
   },
-  // Chord tone arpeggio with chromatic upper approach
   {
-    degrees: [4, 5, 4, 2, 4, 2, 1, 0],
-    durations: ["eighth","eighth","quarter","eighth","eighth","quarter","eighth","eighth"],
+    artist: "ジョン・コルトレーン",
+    title: "アルペジオ・カスケード",
+    startBeat: 0,
+    // 6 triplet 8ths (2 beats) + 2 quarters (2 beats) = 4 beats
+    templates: [
+      { degree:0, duration:"eighth", triplet:true },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:6, duration:"eighth", triplet:true },
+      { degree:5, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:2, duration:"quarter" },
+      { degree:0, duration:"quarter" },
+    ],
   },
-  // Scale run up, then chord tones down
+
+  // ── Clifford Brown ─────────────────────────────────────────────────────────
   {
-    degrees: [0, 1, 2, 3, 4, 5, 6, 4],
-    durations: ["eighth","eighth","eighth","eighth","eighth","eighth","quarter","quarter"],
+    artist: "クリフォード・ブラウン",
+    title: "ビバップ・カデンツ",
+    startBeat: 0.5,
+    // 7 eighth notes = 3.5 beats  (+ 0.5 pickup = 4)
+    templates: [
+      { degree:6, duration:"eighth" },
+      { degree:5, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:3, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:1, duration:"eighth" },
+      { degree:0, duration:"eighth" },
+    ],
   },
-  // Upper structure → resolution (targeting root)
   {
-    degrees: [5, 6, 5, 4, 2, 1, 0, 2],
-    durations: ["eighth","eighth","quarter","eighth","eighth","quarter","half"],
+    artist: "クリフォード・ブラウン",
+    title: "コード・トーン・アウトライン",
+    startBeat: 0,
+    // 8 eighth notes = 4 beats
+    templates: [
+      { degree:4, duration:"eighth" },
+      { degree:6, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:1, duration:"eighth" },
+      { degree:0, duration:"eighth" },
+    ],
   },
-  // Enclosure + resolution (bebop hallmark)
+
+  // ── Miles Davis ────────────────────────────────────────────────────────────
   {
-    degrees: [1, 0, 6, 0, 2, 4, 3, 2],
-    durations: ["eighth","eighth","eighth","eighth","quarter","eighth","eighth","quarter"],
+    artist: "マイルス・デイヴィス",
+    title: "リリカル・ステイトメント",
+    startBeat: 1,
+    // 3 quarters = 3 beats  (+ 1 pickup = 4)
+    templates: [
+      { degree:4, duration:"quarter" },
+      { degree:2, duration:"quarter" },
+      { degree:0, duration:"quarter" },
+    ],
   },
-  // Pickup 8th pick into arpeggio
   {
-    degrees: [6, 0, 2, 4, 6, 4, 2, 0],
-    durations: ["eighth","eighth","eighth","eighth","quarter","eighth","eighth","quarter"],
+    artist: "マイルス・デイヴィス",
+    title: "モーダル・スペース",
+    startBeat: 1.5,
+    // quarter + half = 3... no: 1+2=3 beats? Need 2.5 beats for pickup 1.5
+    // 5 eighth notes = 2.5 beats  (+ 1.5 pickup = 4)
+    templates: [
+      { degree:5, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:1, duration:"eighth" },
+      { degree:0, duration:"eighth" },
+    ],
   },
-  // Rhythmic displacement — syncopated quarters
+
+  // ── Roy Hargrove ───────────────────────────────────────────────────────────
   {
-    degrees: [2, 4, 6, 4, 2, 0, 1, 0],
-    durations: ["quarter","eighth","eighth","quarter","eighth","eighth","eighth","eighth"],
+    artist: "ロイ・ハーグローブ",
+    title: "ハードバップ・グルーヴ",
+    startBeat: 0.5,
+    // 3 triplet 8ths (1 beat) + 5 eighths (2.5 beats) = 3.5 beats  (+ 0.5 = 4)
+    templates: [
+      { degree:0, duration:"eighth", triplet:true },
+      { degree:1, duration:"eighth", triplet:true },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth" },
+      { degree:3, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:1, duration:"eighth" },
+      { degree:0, duration:"eighth" },
+    ],
+  },
+  {
+    artist: "ロイ・ハーグローブ",
+    title: "シンコペーション・ライン",
+    startBeat: 0,
+    // quarter + 3 triplets + quarter + 3 triplets = 1+1+1+1 = 4 beats
+    templates: [
+      { degree:2, duration:"quarter" },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:3, duration:"eighth", triplet:true },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:0, duration:"quarter" },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:6, duration:"eighth", triplet:true },
+    ],
+  },
+
+  // ── Charlie Parker ─────────────────────────────────────────────────────────
+  {
+    artist: "チャーリー・パーカー",
+    title: "エンクロージャー",
+    startBeat: 0.5,
+    // 7 eighth notes = 3.5 beats  (+ 0.5 = 4)
+    templates: [
+      { degree:1, duration:"eighth" },
+      { degree:0, duration:"eighth" },
+      { degree:6, duration:"eighth" },
+      { degree:0, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:3, duration:"eighth" },
+    ],
+  },
+
+  // ── Freddie Hubbard ────────────────────────────────────────────────────────
+  {
+    artist: "フレディ・ハバード",
+    title: "ポストバップ・トリプレット",
+    startBeat: 0,
+    // 3trip(1) + q(1) + 3trip(1) + q(1) = 4 beats
+    templates: [
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:6, duration:"eighth", triplet:true },
+      { degree:4, duration:"quarter" },
+      { degree:0, duration:"eighth", triplet:true },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:0, duration:"quarter" },
+    ],
+  },
+
+  // ── Lee Morgan ─────────────────────────────────────────────────────────────
+  {
+    artist: "リー・モーガン",
+    title: "ハードバップ・スウィング",
+    startBeat: 0,
+    // 8 eighth notes = 4 beats
+    templates: [
+      { degree:2, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:6, duration:"eighth" },
+      { degree:5, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:1, duration:"eighth" },
+      { degree:0, duration:"eighth" },
+    ],
   },
 ];
-
-// Pickup offset options (in beats) — authentic jazz phrasing rarely starts on beat 1
-const PICKUP_OPTIONS = [0, 0, 0.5, 0.5, 1, 1.5];
 
 // ── Builder ───────────────────────────────────────────────────────────────────
 
 export function generateLick(chord: Chord, scale: Scale): Lick {
-  const { degrees, durations } =
-    LICK_PATTERNS[Math.floor(Math.random() * LICK_PATTERNS.length)];
+  const pattern = PATTERNS[Math.floor(Math.random() * PATTERNS.length)];
 
-  const startBeat = PICKUP_OPTIONS[Math.floor(Math.random() * PICKUP_OPTIONS.length)];
-
-  const notes: LickNote[] = degrees.map((degreeIdx, i) => {
-    const noteIndex = degreeIdx % scale.notes.length;
-    const octaveBump = Math.floor(degreeIdx / scale.notes.length);
+  const notes: LickNote[] = pattern.templates.map(({ degree, duration, triplet }) => {
+    const noteIndex = degree % scale.notes.length;
+    const octaveBump = Math.floor(degree / scale.notes.length);
     return {
       note: scale.notes[noteIndex],
       octave: (4 + octaveBump) as Octave,
-      duration: durations[i % durations.length],
+      duration,
+      triplet,
     };
   });
 
   return {
     id: Math.random().toString(36).slice(2),
-    title: `${chord.symbol} Lick (${scale.name})`,
+    artist: pattern.artist,
+    title: pattern.title,
     targetChord: chord,
     scale,
     notes,
-    abc: toABC(notes, chord.symbol, startBeat),
+    abc: toABC(notes, chord.symbol, pattern.startBeat),
     bpm: 120,
-    startBeat,
+    startBeat: pattern.startBeat,
   };
 }
 
 // ── ABC notation ──────────────────────────────────────────────────────────────
 
 const ABC_DURATION: Record<Duration, string> = {
-  whole:     "8",
-  half:      "4",
-  quarter:   "2",
-  eighth:    "",
-  sixteenth: "/2",
+  whole: "8", half: "4", quarter: "2", eighth: "", sixteenth: "/2",
 };
-
 const OCTAVE_MARK: Record<number, string> = { 3:",", 4:"", 5:"'", 6:"''" };
 
 function toABCNote(ln: LickNote): string {
-  const sharp = ln.note.includes("#") ? "^" : ln.note.includes("b") ? "_" : "";
+  const acc = ln.note.includes("#") ? "^" : ln.note.includes("b") ? "_" : "";
   const letter = ln.note.replace(/[#b]/, "");
-  const octMark = OCTAVE_MARK[ln.octave] ?? "";
-  return `${sharp}${letter}${octMark}${ABC_DURATION[ln.duration]}`;
+  return `${acc}${letter}${OCTAVE_MARK[ln.octave] ?? ""}${ABC_DURATION[ln.duration]}`;
 }
 
-function toABC(notes: LickNote[], chordSymbol: string, startBeat: number): string {
-  // Represent pickup beat as a rest prefix
-  const restPrefix = startBeat > 0
-    ? `z${startBeat === 0.5 ? "" : startBeat === 1 ? "2" : "3"} `
-    : "";
-  const body = notes.map(toABCNote).join(" ");
-  return `X:1\nT:${chordSymbol} Lick\nM:4/4\nL:1/8\nQ:120\nK:C\n| ${restPrefix}${body} |`;
+function toABC(notes: LickNote[], sym: string, startBeat: number): string {
+  const restMap: Record<number, string> = { 0.5:"z", 1:"z2", 1.5:"z3" };
+  const prefix = startBeat > 0 ? `${restMap[startBeat] ?? "z"} ` : "";
+  return `X:1\nT:${sym} Lick\nM:4/4\nL:1/8\nQ:120\nK:C\n| ${prefix}${notes.map(toABCNote).join(" ")} |`;
 }
