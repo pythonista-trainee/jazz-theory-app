@@ -22,8 +22,8 @@ export function useQuiz(count = 10, mode: QuizMode | "mixed" = "mixed") {
       ? session.results[session.results.length - 1]
       : null;
 
-  const start = useCallback(() => {
-    const questions = buildQuizSession(count, mode);
+  const start = useCallback((overrideCount?: number, overrideMode?: QuizMode | "mixed") => {
+    const questions = buildQuizSession(overrideCount ?? count, overrideMode ?? mode);
     setSession({
       questions,
       results: [],

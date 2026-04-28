@@ -2,6 +2,9 @@
 
 import { type QuizQuestion, type QuizResult } from "@/types/music";
 import { Button } from "@/components/ui/Button";
+import { PlayButton } from "@/components/ui/PlayButton";
+import { ChordScoreViewer } from "@/components/score/ChordScoreViewer";
+import { formatNote } from "@/lib/theory/noteFormat";
 import { clsx } from "clsx";
 
 interface Props {
@@ -30,54 +33,48 @@ export function QuizCard({
       {/* Progress bar */}
       <div className="mb-6">
         <div className="flex justify-between text-sm text-jazz-muted mb-2">
-          <span>
-            {progress.current} / {progress.total}
-          </span>
-          <span className="text-jazz-gold font-semibold">
-            Score: {progress.score}
-          </span>
+          <span>{progress.current} / {progress.total}</span>
+          <span className="text-jazz-gold font-semibold">Score: {progress.score}</span>
         </div>
         <div className="h-1.5 bg-jazz-teal rounded-full overflow-hidden">
           <div
             className="h-full bg-jazz-accent transition-all duration-300"
-            style={{
-              width: `${((progress.current - 1) / progress.total) * 100}%`,
-            }}
+            style={{ width: `${((progress.current - 1) / progress.total) * 100}%` }}
           />
         </div>
       </div>
 
       {/* Question */}
       <div className="bg-jazz-card border border-white/10 rounded-2xl p-8 mb-6 shadow-xl">
-        <p className="text-jazz-muted text-sm uppercase tracking-widest mb-3">
+        <p className="text-jazz-muted text-sm uppercase tracking-widest mb-4">
           {question.mode === "chord-to-notes"
             ? "このコードの構成音は？"
             : "この構成音のコード名は？"}
         </p>
 
         {question.mode === "chord-to-notes" ? (
-          <div className="text-center">
+          <div className="flex flex-col items-center gap-4">
             <span className="text-6xl font-bold text-jazz-gold tracking-tight">
-              {question.chord.symbol}
+              {formatNote(question.chord.symbol)}
             </span>
-            <p className="text-jazz-muted mt-3 text-sm">
-              Root: <span className="text-jazz-text">{question.chord.root}</span>
-              &nbsp;|&nbsp;Quality:{" "}
-              <span className="text-jazz-text">{question.chord.quality}</span>
-            </p>
+            <PlayButton notes={question.chord.notes} type="chord" label="コードを聴く" />
           </div>
         ) : (
-          <div className="text-center">
-            <div className="flex flex-wrap justify-center gap-3 mt-2">
+          <div className="flex flex-col items-center gap-4">
+            {/* Staff showing the notes */}
+            <ChordScoreViewer notes={question.chord.notes} mode="chord" width={280} height={130} />
+            {/* Note name badges */}
+            <div className="flex flex-wrap justify-center gap-2">
               {question.presentedNotes?.map((n) => (
                 <span
                   key={n}
-                  className="text-3xl font-bold text-jazz-gold bg-jazz-teal/40 px-4 py-2 rounded-xl border border-jazz-teal"
+                  className="text-2xl font-bold text-jazz-gold bg-jazz-teal/40 px-4 py-2 rounded-xl border border-jazz-teal"
                 >
-                  {n}
+                  {formatNote(n)}
                 </span>
               ))}
             </div>
+            <PlayButton notes={question.chord.notes} type="chord" label="音を聴く" />
           </div>
         )}
       </div>
@@ -87,14 +84,6 @@ export function QuizCard({
         {question.choices.map((choice) => {
           const isSelected = selectedAnswer === choice;
           const isCorrect = choice === question.correctAnswer;
-
-          let variant: "primary" | "secondary" | "correct" | "wrong" | "ghost" =
-            "secondary";
-          if (isAnswer) {
-            if (isCorrect) variant = "correct";
-            else if (isSelected) variant = "wrong";
-            else variant = "ghost";
-          }
 
           return (
             <button
@@ -115,20 +104,16 @@ export function QuizCard({
               )}
             >
               <span className="flex items-center gap-3">
-                {isAnswer && isCorrect && (
-                  <span className="text-emerald-400 text-lg">✓</span>
-                )}
-                {isAnswer && isSelected && !isCorrect && (
-                  <span className="text-red-400 text-lg">✗</span>
-                )}
-                {choice}
+                {isAnswer && isCorrect && <span className="text-emerald-400 text-lg">✓</span>}
+                {isAnswer && isSelected && !isCorrect && <span className="text-red-400 text-lg">✗</span>}
+                {formatNote(choice)}
               </span>
             </button>
           );
         })}
       </div>
 
-      {/* Explanation after answer */}
+      {/* Result feedback */}
       {isAnswer && lastResult && (
         <div
           className={clsx(
@@ -138,14 +123,10 @@ export function QuizCard({
               : "bg-red-900/20 border-red-700 text-red-300"
           )}
         >
-          <p className="font-semibold mb-1">
-            {lastResult.isCorrect ? "正解！" : "不正解"}
-          </p>
+          <p className="font-semibold mb-1">{lastResult.isCorrect ? "正解！" : "不正解"}</p>
           <p className="text-jazz-muted">
             正解:&nbsp;
-            <span className="text-jazz-text font-mono">
-              {question.correctAnswer}
-            </span>
+            <span className="text-jazz-text font-mono">{formatNote(question.correctAnswer)}</span>
             &nbsp;|&nbsp;{(lastResult.timeMs / 1000).toFixed(1)}秒
           </p>
         </div>
