@@ -75,6 +75,8 @@ export interface Lick {
   /** ABC notation string for VexFlow / rendering */
   abc: string;
   bpm: number;
+  /** Beat offset before the phrase starts (0 = downbeat, 0.5 = off-beat pickup) */
+  startBeat: number;
 }
 
 // ── Quiz ──────────────────────────────────────────────────────────────────────

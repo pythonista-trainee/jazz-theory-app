@@ -18,7 +18,7 @@ export default function RootLayout({
       <body className="min-h-screen bg-jazz-bg text-jazz-text antialiased">
         <Providers>
           <Header />
-          <main className="px-4 py-10">{children}</main>
+          <main className="px-4 py-10 pb-24 sm:pb-10">{children}</main>
         </Providers>
       </body>
     </html>

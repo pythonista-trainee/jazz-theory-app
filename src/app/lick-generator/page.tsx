@@ -20,6 +20,44 @@ const DURATION_BEATS: Record<string, number> = {
   whole: 4, half: 2, quarter: 1, eighth: 0.5, sixteenth: 0.25,
 };
 
+/**
+ * スウィング再生タイムテーブルを計算する。
+ * 八分音符は表拍(long)・裏拍(short)の不均等な長さになる。
+ * swingRatio=0.65 → 表:裏 = 65%:35%（ミディアムスウィング）
+ */
+function computeSwingSchedule(
+  notes: { duration: string }[],
+  bpm: number,
+  startBeat: number,
+  swingRatio = 0.65
+): { startSec: number; durationSec: number }[] {
+  const beatSec = 60 / bpm;
+  const longSec  = beatSec * swingRatio;       // 表拍 8分音符
+  const shortSec = beatSec * (1 - swingRatio); // 裏拍 8分音符
+
+  // ピックアップ分のオフセット（ここで拍カウンターも揃える）
+  let t = 0;
+  let eighthCount = Math.round(startBeat * 2); // 開始位置の8分音符カウント
+
+  const schedule: { startSec: number; durationSec: number }[] = [];
+
+  for (const note of notes) {
+    const advanceSec = (() => {
+      if (note.duration === "eighth") {
+        const isOnBeat = eighthCount % 2 === 0;
+        eighthCount++;
+        return isOnBeat ? longSec : shortSec;
+      }
+      const beats = DURATION_BEATS[note.duration] ?? 0.5;
+      eighthCount += beats * 2;
+      return beats * beatSec;
+    })();
+    schedule.push({ startSec: t, durationSec: advanceSec * 0.88 });
+    t += advanceSec;
+  }
+  return schedule;
+}
+
 export default function LickGeneratorPage() {
   const [chordSymbol, setChordSymbol] = useState("Dm7");
   const [lick, setLick] = useState<Lick | null>(null);
@@ -44,20 +82,16 @@ export default function LickGeneratorPage() {
       const inst = getInstrument(instrumentId);
       const synth = inst.createSynth(Tone);
 
-      const bps = lick.bpm / 60;
-      const beatSec = 1 / bps;
+      const schedule = computeSwingSchedule(lick.notes, lick.bpm, lick.startBeat);
       const now = Tone.now();
-      let t = now;
 
-      for (const n of lick.notes) {
-        const beats = DURATION_BEATS[n.duration] ?? 0.5;
-        const durSec = beats * beatSec;
-        // 音が繋がらないよう発音時間を95%に抑える
-        synth.triggerAttackRelease(`${n.note}${n.octave}`, durSec * 0.95, t);
-        t += durSec;
-      }
+      lick.notes.forEach((n, i) => {
+        const { startSec, durationSec } = schedule[i];
+        synth.triggerAttackRelease(`${n.note}${n.octave}`, durationSec, now + startSec);
+      });
 
-      const totalMs = (t - now) * 1000 + 500;
+      const lastEntry = schedule[schedule.length - 1];
+      const totalMs = (lastEntry.startSec + lastEntry.durationSec) * 1000 + 600;
       setTimeout(() => { synth.dispose(); setIsPlaying(false); }, totalMs);
     } catch (e) {
       console.error(e);
@@ -132,9 +166,21 @@ export default function LickGeneratorPage() {
       {lick && (
         <div className="space-y-4">
           <div className="bg-jazz-card border border-white/10 rounded-2xl p-5">
-            <p className="text-xs uppercase tracking-widest text-jazz-muted mb-4">
-              {formatNote(lick.title)}
-            </p>
+            <div className="flex items-center justify-between mb-4">
+              <p className="text-xs uppercase tracking-widest text-jazz-muted">
+                {formatNote(lick.title)}
+              </p>
+              <div className="flex gap-2 text-xs text-jazz-muted">
+                <span className="px-2 py-1 bg-jazz-surface rounded-md">
+                  🎵 Swing
+                </span>
+                {lick.startBeat > 0 && (
+                  <span className="px-2 py-1 bg-jazz-surface rounded-md">
+                    ↩ Pickup +{lick.startBeat}拍
+                  </span>
+                )}
+              </div>
+            </div>
             <LickScoreViewer notes={lick.notes} width={560} height={160} />
 
             {/* Note badges */}
