@@ -2,11 +2,11 @@
 
 import { useState, useCallback } from "react";
 import { assignOctaves } from "@/lib/theory/noteFormat";
+import { getInstrument } from "@/lib/audio/instruments";
+import { useInstrument } from "@/context/InstrumentContext";
 
 interface Props {
-  /** Note names without octave e.g. ["C","E","G","B"] */
   notes: string[];
-  /** "chord" plays simultaneously, "scale" plays sequentially */
   type?: "chord" | "scale";
   bpm?: number;
   label?: string;
@@ -14,6 +14,7 @@ interface Props {
 
 export function PlayButton({ notes, type = "chord", bpm = 120, label }: Props) {
   const [playing, setPlaying] = useState(false);
+  const { instrumentId } = useInstrument();
 
   const play = useCallback(async () => {
     if (playing) return;
@@ -22,29 +23,30 @@ export function PlayButton({ notes, type = "chord", bpm = 120, label }: Props) {
       const Tone = await import("tone");
       await Tone.start();
 
-      const synth = new Tone.PolySynth(Tone.Synth, {
-        oscillator: { type: "triangle" },
-        envelope: { attack: 0.02, decay: 0.1, sustain: 0.6, release: 0.8 },
-      }).toDestination();
+      const inst = getInstrument(instrumentId);
+      const synth = inst.createSynth(Tone);
 
-      const scientific = assignOctaves(notes);
+      // Bass instrument: drop an octave
+      const startOctave = instrumentId === "bass" ? 3 : 4;
+      const scientific = assignOctaves(notes, startOctave);
       const beatSec = 60 / bpm;
 
       if (type === "chord") {
-        synth.triggerAttackRelease(scientific, "2n");
-        setTimeout(() => { synth.dispose(); setPlaying(false); }, 1500);
+        synth.triggerAttackRelease(scientific, inst.chordDuration);
+        const durMs = durationToMs(inst.chordDuration, bpm) + 600;
+        setTimeout(() => { synth.dispose(); setPlaying(false); }, durMs);
       } else {
         const now = Tone.now();
         scientific.forEach((n, i) => {
-          synth.triggerAttackRelease(n, "8n", now + i * beatSec * 0.5);
+          synth.triggerAttackRelease(n, inst.scaleDuration, now + i * beatSec * 0.5);
         });
-        const totalMs = scientific.length * beatSec * 0.5 * 1000 + 500;
+        const totalMs = scientific.length * beatSec * 0.5 * 1000 + 800;
         setTimeout(() => { synth.dispose(); setPlaying(false); }, totalMs);
       }
     } catch {
       setPlaying(false);
     }
-  }, [notes, type, bpm, playing]);
+  }, [notes, type, bpm, playing, instrumentId]);
 
   return (
     <button
@@ -57,4 +59,15 @@ export function PlayButton({ notes, type = "chord", bpm = 120, label }: Props) {
       <span>{playing ? "再生中..." : (label ?? "再生")}</span>
     </button>
   );
+}
+
+function durationToMs(dur: string, bpm: number): number {
+  const beatMs = (60 / bpm) * 1000;
+  const map: Record<string, number> = {
+    "1n": beatMs * 4,
+    "2n": beatMs * 2,
+    "4n": beatMs,
+    "8n": beatMs / 2,
+  };
+  return map[dur] ?? beatMs * 2;
 }
