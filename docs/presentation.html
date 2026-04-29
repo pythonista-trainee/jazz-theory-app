@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jazz Theory App — 説明書</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg:      #0e0e12;
+    --card:    #16161e;
+    --surface: #1e1e2a;
+    --border:  rgba(255,255,255,0.08);
+    --gold:    #f5c842;
+    --accent:  #7c3aed;
+    --teal:    #2dd4bf;
+    --muted:   #6b7280;
+    --text:    #e8e8f0;
+  }
+
+  html, body {
+    width: 100%; height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    overflow: hidden;
+  }
+
+  /* ── Slide container ── */
+  .slides { width: 100%; height: 100%; position: relative; }
+
+  .slide {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    padding: 48px 64px;
+    opacity: 0; pointer-events: none;
+    transition: opacity 0.35s ease;
+  }
+  .slide.active { opacity: 1; pointer-events: auto; }
+
+  /* ── Navigation ── */
+  .nav {
+    position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 16px;
+    background: rgba(22,22,30,0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 10px 20px;
+    z-index: 100;
+  }
+  .nav button {
+    background: none; border: none; cursor: pointer;
+    color: var(--muted); font-size: 18px; padding: 4px 8px;
+    transition: color 0.2s;
+  }
+  .nav button:hover { color: var(--gold); }
+  .nav button:disabled { opacity: 0.25; cursor: default; }
+  .counter { color: var(--muted); font-size: 13px; min-width: 50px; text-align: center; }
+
+  /* keyboard hint */
+  .key-hint {
+    position: fixed; bottom: 28px; right: 36px;
+    color: var(--muted); font-size: 11px;
+  }
+
+  /* ── Decorative noise ── */
+  .slide::before {
+    content: '';
+    position: absolute; inset: 0;
+    background-image: radial-gradient(circle at 80% 20%, rgba(124,58,237,0.06) 0%, transparent 60%),
+                      radial-gradient(circle at 20% 80%, rgba(245,200,66,0.04) 0%, transparent 50%);
+    pointer-events: none;
+  }
+
+  /* ── Typography ── */
+  .tag {
+    display: inline-block;
+    background: rgba(124,58,237,0.2);
+    color: var(--accent);
+    border: 1px solid rgba(124,58,237,0.4);
+    border-radius: 999px;
+    padding: 3px 14px; font-size: 12px; font-weight: 700;
+    letter-spacing: .08em; text-transform: uppercase;
+    margin-bottom: 18px;
+  }
+  .tag.gold {
+    background: rgba(245,200,66,0.15);
+    color: var(--gold);
+    border-color: rgba(245,200,66,0.35);
+  }
+  .tag.teal {
+    background: rgba(45,212,191,0.15);
+    color: var(--teal);
+    border-color: rgba(45,212,191,0.3);
+  }
+
+  h1 { font-size: clamp(36px, 5vw, 64px); font-weight: 900; line-height: 1.1; }
+  h2 { font-size: clamp(26px, 3.5vw, 44px); font-weight: 900; line-height: 1.2; }
+  h3 { font-size: clamp(18px, 2.2vw, 26px); font-weight: 700; }
+
+  .gold  { color: var(--gold); }
+  .teal  { color: var(--teal); }
+  .muted { color: var(--muted); }
+  .accent{ color: #a78bfa; }
+
+  p { line-height: 1.8; }
+  .lead { font-size: clamp(14px, 1.6vw, 18px); color: var(--muted); line-height: 1.8; }
+
+  /* ── Cards ── */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 24px;
+  }
+  .card-grid {
+    display: grid; gap: 16px;
+    width: 100%; max-width: 900px;
+  }
+  .card-grid.cols2 { grid-template-columns: 1fr 1fr; }
+  .card-grid.cols3 { grid-template-columns: 1fr 1fr 1fr; }
+
+  .feature-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 28px;
+    display: flex; flex-direction: column; gap: 10px;
+  }
+  .feature-card .icon { font-size: 32px; }
+  .feature-card h3 { font-size: 18px; }
+  .feature-card p { font-size: 13px; color: var(--muted); line-height: 1.7; }
+
+  /* ── Step list ── */
+  .steps { list-style: none; width: 100%; max-width: 760px; display: flex; flex-direction: column; gap: 14px; }
+  .steps li {
+    display: flex; align-items: flex-start; gap: 16px;
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 12px; padding: 16px 20px;
+  }
+  .step-num {
+    min-width: 28px; height: 28px;
+    background: var(--accent); border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 900; color: #fff; flex-shrink: 0;
+  }
+  .step-body h4 { font-size: 14px; font-weight: 700; margin-bottom: 4px; }
+  .step-body p  { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* ── Badge strip ── */
+  .badges { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .badge {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 14px; font-size: 13px; font-family: 'JetBrains Mono', monospace;
+    color: var(--teal);
+  }
+
+  /* ── Screen mockup ── */
+  .mockup {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px 20px;
+    font-size: 12px; font-family: 'JetBrains Mono', monospace;
+    color: var(--muted); min-width: 260px;
+  }
+  .mockup .row { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid var(--border); }
+  .mockup .row:last-child { border-bottom: none; }
+  .mockup .row span:first-child { color: var(--text); }
+  .mockup .row span.hi { color: var(--gold); font-weight: 700; }
+
+  /* ── Two-col layout ── */
+  .two-col {
+    display: flex; gap: 48px; align-items: flex-start;
+    width: 100%; max-width: 960px;
+  }
+  .two-col .left  { flex: 1; }
+  .two-col .right { flex: 1; }
+
+  /* ── Divider ── */
+  hr { border: none; border-top: 1px solid var(--border); margin: 20px 0; }
+
+  /* progress bar */
+  .progress-bar {
+    position: fixed; top: 0; left: 0; height: 2px;
+    background: linear-gradient(90deg, var(--accent), var(--gold));
+    transition: width 0.35s ease;
+    z-index: 200;
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-bar" id="pbar"></div>
+
+<div class="slides" id="slides">
+
+  <!-- ══════════════════════════════════════════════════════
+       1. TITLE
+  ══════════════════════════════════════════════════════ -->
+  <section class="slide active" style="text-align:center;">
+    <div class="tag gold">Jazz Theory App</div>
+    <h1>ジャズ理論を<br><span class="gold">実音で学ぶ</span>アプリ</h1>
+    <p class="lead" style="margin-top:24px;max-width:560px;">
+      コード・スケール・フレーズを一体で学べる<br>
+      ウェブアプリの使い方ガイド
+    </p>
+    <p class="muted" style="margin-top:48px;font-size:13px;">← / → キーまたは下のボタンでスライドを進める</p>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       2. OVERVIEW
+  ══════════════════════════════════════════════════════ -->
+  <section class="slide" style="text-align:center;">
+    <div class="tag">Overview</div>
+    <h2>何のためのアプリか？</h2>
+    <p class="lead" style="margin-top:16px;max-width:640px;">
+      ジャズのアドリブ練習で必要な<strong style="color:var(--text)">「コード・スケール・フレーズ」</strong>を<br>
+      バラバラに覚えるのではなく、<strong style="color:var(--text)">音を出しながら一体で習得</strong>するためのツールです。
+    </p>
+    <div class="card-grid cols3" style="margin-top:40px;">
+      <div class="feature-card">
+        <span class="icon">🎹</span>
+        <h3 class="gold">Chord Master</h3>
+        <p>コードの構成音を視覚・聴覚で理解し、クイズで定着させる</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon">🎼</span>
+        <h3 class="teal">Scale Matcher</h3>
+        <p>II–V–I進行の各コードにどのスケールを使うかを確認する</p>
+      </div>
+      <div class="feature-card">
+        <span class="icon">🎷</span>
+        <h3 class="accent">Lick Generator</h3>
+        <p>伝説のジャズマンのフレーズを生成し、スウィングで演奏する</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       3. CHORD MASTER — 概要
+  ══════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="tag gold">Chord Master</div>
+    <div class="two-col">
+      <div class="left">
+        <h2><span class="gold">Chord Master</span></h2>
+        <p class="lead" style="margin-top:16px;">
+          ジャズで頻出するコードの構成音を<br>
+          <strong style="color:var(--text)">見て・聴いて・答えて</strong> 身につける機能です。
+        </p>
+        <hr>
+        <p style="font-size:14px;line-height:1.9;color:var(--muted);">
+          ✦ 16種類のコードクオリティ × 12のルート音<br>
+          ✦ 楽譜（五線譜）でコードトーンを表示<br>
+          ✦ 選択した楽器で実際の音を確認<br>
+          ✦ クイズモードで反射的な理解を養う
+        </p>
+      </div>
+      <div class="right">
+        <div class="mockup">
+          <div class="row"><span>モード</span><span class="hi">コード学習 / クイズ</span></div>
+          <div class="row"><span>コード種類</span><span>maj7, m7, 7, dim7 ほか16種</span></div>
+          <div class="row"><span>ルート音</span><span>C〜B 全12音</span></div>
+          <div class="row"><span>表示</span><span>五線譜 + 音名バッジ</span></div>
+          <div class="row"><span>再生</span><span>選択中の楽器で和音を演奏</span></div>
+        </div>
+        <div class="badges" style="margin-top:14px;">
+          <span class="badge">maj7</span>
+          <span class="badge">m7</span>
+          <span class="badge">7</span>
+          <span class="badge">m7♭5</span>
+          <span class="badge">dim7</span>
+          <span class="badge">7♭9</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       4. CHORD MASTER — コード学習
+  ══════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="tag gold">Chord Master — コード学習タブ</div>
+    <h2 style="margin-bottom:28px;">コードを<span class="gold">見て・聴く</span></h2>
+    <ul class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>クオリティを選ぶ</h4>
+          <p>「メジャー系」「マイナー系」「ドミナント系」「特殊」の4グループから コードの種類を選択（例: <span style="color:var(--teal);font-family:monospace">m7</span>）</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>ルート音を選ぶ</h4>
+          <p>C〜Bの12音から根音を選択。画面中央に選択中のコード名が大きく表示される（例: <span style="color:var(--gold);font-family:monospace">D♭m7</span>）</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>五線譜と構成音を確認</h4>
+          <p>VexFlow の楽譜で和音がどの音符に相当するかを視覚的に確認できる</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>▶ ボタンで音を鳴らす</h4>
+          <p>右上の楽器セレクタで選んだ音色（オルガン・ピアノ・サックスなど）でコードを再生</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       5. CHORD MASTER — クイズ
+  ══════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="tag gold">Chord Master — クイズタブ</div>
+    <h2 style="margin-bottom:28px;">反射神経を<span class="gold">鍛える</span></h2>
+    <div class="two-col">
+      <div class="left">
+        <ul class="steps">
+          <li>
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h4>問題数とモードを設定</h4>
+              <p>5〜30問、「コード→構成音」「構成音→コード名」「ミックス」から選ぶ</p>
+            </div>
+          </li>
+          <li>
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h4>4択で回答</h4>
+              <p>コード名を見て構成音を選ぶ、または音名の並びを見てコード名を当てる</p>
+            </div>
+          </li>
+          <li>
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h4>正誤フィードバック</h4>
+              <p>正解・不正解がリアルタイム表示。全問終了後にスコアと正答率を確認</p>
+            </div>
+          </li>
+        </ul>
+      </div>
+      <div class="right">
+        <div class="card" style="text-align:center;">
+          <p class="muted" style="font-size:12px;margin-bottom:12px;">クイズ例：コード→構成音</p>
+          <p style="font-size:40px;font-weight:900;color:var(--gold);font-family:monospace;margin-bottom:20px;">Dm7</p>
+          <p class="muted" style="font-size:12px;margin-bottom:12px;">この和音の構成音はどれ？</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+            <div style="background:rgba(45,212,191,0.15);border:1px solid rgba(45,212,191,0.4);border-radius:10px;padding:10px;font-family:monospace;font-size:13px;color:var(--teal);">D F A C ✓</div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;font-family:monospace;font-size:13px;color:var(--muted);">D F♯ A C♯</div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;font-family:monospace;font-size:13px;color:var(--muted);">D F A♭ C</div>
+            <div style="background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:10px;font-family:monospace;font-size:13px;color:var(--muted);">D F A B</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       6. SCALE MATCHER — 概要
+  ══════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="tag teal">Scale Matcher</div>
+    <div class="two-col">
+      <div class="left">
+        <h2><span class="teal">Scale Matcher</span></h2>
+        <p class="lead" style="margin-top:16px;">
+          ジャズの基本進行 <strong style="color:var(--text)">II–V–I</strong> の各コードに対して、<br>
+          <strong style="color:var(--text)">どのスケールを使うか</strong>を理論的根拠とともに学ぶ機能です。
+        </p>
+        <hr>
+        <p style="font-size:14px;line-height:1.9;color:var(--muted);">
+          ✦ 全12キーのII–V–I進行を表示<br>
+          ✦ 各コードに最適スケールを★で格付け表示<br>
+          ✦ 代替スケールを選択して比較可能<br>
+          ✦ スケール音を実際の音で確認
+        </p>
+      </div>
+      <div class="right">
+        <div class="card">
+          <p class="muted" style="font-size:11px;margin-bottom:12px;">キー C のII–V–I</p>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center;">
+            <div style="background:var(--surface);border-radius:10px;padding:12px;">
+              <p class="muted" style="font-size:10px;">II</p>
+              <p style="font-size:22px;font-weight:900;color:var(--gold);">Dm7</p>
+            </div>
+            <div style="background:var(--surface);border-radius:10px;padding:12px;">
+              <p class="muted" style="font-size:10px;">V</p>
+              <p style="font-size:22px;font-weight:900;color:var(--gold);">G7</p>
+            </div>
+            <div style="background:var(--surface);border-radius:10px;padding:12px;">
+              <p class="muted" style="font-size:10px;">I</p>
+              <p style="font-size:22px;font-weight:900;color:var(--gold);">Cmaj7</p>
+            </div>
+          </div>
+          <div style="margin-top:14px;font-size:12px;color:var(--muted);line-height:1.8;">
+            <div>Dm7 → <span style="color:var(--teal);">D Dorian</span> <span style="color:#fbbf24;">★★★★★</span></div>
+            <div>G7 &nbsp;→ <span style="color:var(--teal);">G Mixolydian</span> <span style="color:#fbbf24;">★★★★★</span></div>
+            <div>Cmaj7→ <span style="color:var(--teal);">C Major</span> <span style="color:#fbbf24;">★★★★★</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       7. SCALE MATCHER — 操作
+  ══════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="tag teal">Scale Matcher — 操作方法</div>
+    <h2 style="margin-bottom:28px;">スケールを<span class="teal">探索する</span></h2>
+    <ul class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>キーを選ぶ</h4>
+          <p>画面上部のキーボードから調を選択（C〜B 全12キー）。選ぶとII–V–I進行が自動更新される</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>コードをタップして展開</h4>
+          <p>Dm7・G7・Cmaj7 の各カードをタップすると、推奨スケールの五線譜とスケール音が表示される</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>★評価で最適スケールを把握</h4>
+          <p>★5が最も相性が良いスケール。タブを切り替えて代替スケール（Lydian Dominant、Altered など）も聴き比べできる</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>▶ ボタンでスケールを上昇再生</h4>
+          <p>選択中のスケールをルートから8度まで演奏。楽器セレクタで音色を変えて確認できる</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       8. LICK GENERATOR — 概要
+  ══════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="tag" style="background:rgba(167,139,250,0.15);color:#a78bfa;border-color:rgba(167,139,250,0.35);">Lick Generator</div>
+    <div class="two-col">
+      <div class="left">
+        <h2><span class="accent">Lick Generator</span></h2>
+        <p class="lead" style="margin-top:16px;">
+          伝説のジャズマンたちが愛用したフレーズ（Lick）を<br>
+          <strong style="color:var(--text)">コードに合わせて自動生成</strong>し、<br>
+          スウィングで演奏してくれる機能です。
+        </p>
+        <hr>
+        <p style="font-size:14px;line-height:1.9;color:var(--muted);">
+          ✦ 11名のアーティスト由来パターン収録<br>
+          ✦ 五線譜 + スウィングで実際の演奏感を体験<br>
+          ✦ 難易度3段階（初級〜上級）<br>
+          ✦ 4拍カウントイン付きで練習しやすい
+        </p>
+      </div>
+      <div class="right">
+        <div class="card" style="font-size:13px;line-height:2;">
+          <p class="muted" style="font-size:11px;margin-bottom:10px;">収録アーティスト</p>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">
+            <span style="background:var(--surface);border-radius:8px;padding:4px 10px;font-size:12px;">チャーリー・パーカー</span>
+            <span style="background:var(--surface);border-radius:8px;padding:4px 10px;font-size:12px;">ジョン・コルトレーン</span>
+            <span style="background:var(--surface);border-radius:8px;padding:4px 10px;font-size:12px;">マイルス・デイヴィス</span>
+            <span style="background:var(--surface);border-radius:8px;padding:4px 10px;font-size:12px;">クリフォード・ブラウン</span>
+            <span style="background:var(--surface);border-radius:8px;padding:4px 10px;font-size:12px;">ロイ・ハーグローブ</span>
+            <span style="background:var(--surface);border-radius:8px;padding:4px 10px;font-size:12px;">フレディ・ハバード</span>
+            <span style="background:var(--surface);border-radius:8px;padding:4px 10px;font-size:12px;">リー・モーガン</span>
+          </div>
+          <hr style="margin:14px 0;">
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px;">
+            <div style="background:var(--surface);border-radius:10px;padding:10px;text-align:center;">
+              <p style="font-size:18px;font-weight:900;color:var(--gold);">17</p>
+              <p class="muted" style="font-size:11px;">収録パターン</p>
+            </div>
+            <div style="background:var(--surface);border-radius:10px;padding:10px;text-align:center;">
+              <p style="font-size:18px;font-weight:900;color:var(--teal);">1〜2小節</p>
+              <p class="muted" style="font-size:11px;">フレーズ長</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       9. LICK GENERATOR — 難易度・コード選択
+  ══════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="tag" style="background:rgba(167,139,250,0.15);color:#a78bfa;border-color:rgba(167,139,250,0.35);">Lick Generator — 設定</div>
+    <h2 style="margin-bottom:24px;">難易度と<span class="accent">コード</span>を設定する</h2>
+    <div class="two-col">
+      <div class="left">
+        <p class="muted" style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">難易度</p>
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:28px;">
+          <div style="background:rgba(124,58,237,0.15);border:1px solid rgba(124,58,237,0.4);border-radius:12px;padding:14px 18px;">
+            <p style="font-weight:700;color:#a78bfa;">初級</p>
+            <p style="font-size:12px;color:var(--muted);margin-top:4px;">8分音符・四分音符中心。三連符なし〜1グループ</p>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;">
+            <p style="font-weight:700;">中級</p>
+            <p style="font-size:12px;color:var(--muted);margin-top:4px;">三連符あり・1小節フレーズ</p>
+          </div>
+          <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 18px;">
+            <p style="font-weight:700;">上級</p>
+            <p style="font-size:12px;color:var(--muted);margin-top:4px;">複雑な三連符・2小節フレーズ</p>
+          </div>
+        </div>
+      </div>
+      <div class="right">
+        <p class="muted" style="font-size:12px;letter-spacing:.1em;text-transform:uppercase;margin-bottom:12px;">コード選択（質 × 根音）</p>
+        <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;">
+          <p class="muted" style="font-size:11px;margin-bottom:8px;">クオリティを選ぶ</p>
+          <div style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;">
+            <span style="background:rgba(124,58,237,0.2);border:1px solid rgba(124,58,237,0.5);border-radius:8px;padding:4px 10px;font-size:12px;color:#a78bfa;font-family:monospace;">m7</span>
+            <span style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;color:var(--muted);font-family:monospace;">7</span>
+            <span style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;color:var(--muted);font-family:monospace;">maj7</span>
+            <span style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:4px 10px;font-size:12px;color:var(--muted);font-family:monospace;">dim7</span>
+          </div>
+          <p class="muted" style="font-size:11px;margin-bottom:8px;">ルート音を選ぶ</p>
+          <div style="display:grid;grid-template-columns:repeat(6,1fr);gap:4px;margin-bottom:14px;">
+            <span style="background:var(--surface);border-radius:6px;padding:5px;font-size:11px;text-align:center;color:var(--muted);">C</span>
+            <span style="background:var(--surface);border-radius:6px;padding:5px;font-size:11px;text-align:center;color:var(--muted);">D♭</span>
+            <span style="background:rgba(245,200,66,0.15);border:1px solid rgba(245,200,66,0.4);border-radius:6px;padding:5px;font-size:11px;text-align:center;color:var(--gold);font-weight:700;">D</span>
+            <span style="background:var(--surface);border-radius:6px;padding:5px;font-size:11px;text-align:center;color:var(--muted);">E♭</span>
+            <span style="background:var(--surface);border-radius:6px;padding:5px;font-size:11px;text-align:center;color:var(--muted);">E</span>
+            <span style="background:var(--surface);border-radius:6px;padding:5px;font-size:11px;text-align:center;color:var(--muted);">F</span>
+          </div>
+          <div style="text-align:center;">
+            <span style="font-size:32px;font-weight:900;color:var(--gold);font-family:monospace;">Dm7</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       10. LICK GENERATOR — 生成・演奏
+  ══════════════════════════════════════════════════════ -->
+  <section class="slide">
+    <div class="tag" style="background:rgba(167,139,250,0.15);color:#a78bfa;border-color:rgba(167,139,250,0.35);">Lick Generator — 生成と演奏</div>
+    <h2 style="margin-bottom:28px;">Lickを<span class="accent">生成・練習</span>する</h2>
+    <ul class="steps">
+      <li>
+        <div class="step-num">1</div>
+        <div class="step-body">
+          <h4>「Lickを生成」ボタンを押す</h4>
+          <p>難易度とコードに合ったパターンをランダムに選出。五線譜・アーティスト名・音名バッジが表示される</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">2</div>
+        <div class="step-body">
+          <h4>「▶ 演奏」ボタンで音を確認</h4>
+          <p>4拍カウントインの後、スウィングで Lick が演奏される。演奏中は四分音符のクリック音が鳴りテンポが分かりやすい</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">3</div>
+        <div class="step-body">
+          <h4>カウントイン ON/OFF を切り替える</h4>
+          <p>演奏ボタン下のトグルでカウントインを省略可能。慣れてきたらOFFにして即座に確認</p>
+        </div>
+      </li>
+      <li>
+        <div class="step-num">4</div>
+        <div class="step-body">
+          <h4>気に入ったら楽器を真似する</h4>
+          <p>五線譜の音符をそのまま楽器で演奏してみる。ピックアップ（↩ 拍数）がある場合は休んでから吹き出す</p>
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       11. 楽器セレクタ（グローバル）
+  ══════════════════════════════════════════════════════ -->
+  <section class="slide" style="text-align:center;">
+    <div class="tag">Global Feature</div>
+    <h2 style="margin-bottom:20px;">楽器セレクタ</h2>
+    <p class="lead" style="max-width:560px;margin-bottom:36px;">
+      画面右上の楽器アイコンから音色を変更できます。<br>
+      全機能の再生に即座に反映されます。
+    </p>
+    <div class="card-grid cols3" style="max-width:720px;">
+      <div class="feature-card" style="padding:18px;gap:6px;">
+        <span class="icon">🎹</span>
+        <h3 style="font-size:15px;">ピアノ</h3>
+        <p style="font-size:12px;">クリアな打鍵音。コード確認に最適</p>
+      </div>
+      <div class="feature-card" style="padding:18px;gap:6px;border-color:rgba(245,200,66,0.3);">
+        <span class="icon">⛪</span>
+        <h3 style="font-size:15px;color:var(--gold);">オルガン（デフォルト）</h3>
+        <p style="font-size:12px;">ジャズらしい温かみのある持続音</p>
+      </div>
+      <div class="feature-card" style="padding:18px;gap:6px;">
+        <span class="icon">🎷</span>
+        <h3 style="font-size:15px;">サックス / トランペット</h3>
+        <p style="font-size:12px;">管楽器のニュアンスで Lick を確認</p>
+      </div>
+      <div class="feature-card" style="padding:18px;gap:6px;">
+        <span class="icon">🎸</span>
+        <h3 style="font-size:15px;">ギター</h3>
+        <p style="font-size:12px;">プラック系のアタック感</p>
+      </div>
+      <div class="feature-card" style="padding:18px;gap:6px;">
+        <span class="icon">🎻</span>
+        <h3 style="font-size:15px;">ストリングス</h3>
+        <p style="font-size:12px;">弦楽器の柔らかい響き</p>
+      </div>
+      <div class="feature-card" style="padding:18px;gap:6px;">
+        <span class="icon">🎵</span>
+        <h3 style="font-size:15px;">その他</h3>
+        <p style="font-size:12px;">フルート・ビブラフォン・ベース</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════════════════════════════════════════════════
+       12. CLOSING
+  ══════════════════════════════════════════════════════ -->
+  <section class="slide" style="text-align:center;">
+    <div class="tag gold">まとめ</div>
+    <h2 style="margin-bottom:24px;">3機能で<span class="gold">理論を一体化</span>する</h2>
+    <div class="card-grid cols3" style="margin-bottom:36px;">
+      <div class="feature-card" style="text-align:center;align-items:center;">
+        <span class="icon">🎹</span>
+        <h3 class="gold" style="font-size:16px;">Chord Master</h3>
+        <p style="font-size:12px;">コードの構成音を<br>記憶する</p>
+      </div>
+      <div class="feature-card" style="text-align:center;align-items:center;">
+        <span class="icon" style="font-size:24px;">↓</span>
+        <p style="font-size:13px;color:var(--muted);">どの音を使うか分かったら</p>
+      </div>
+      <div class="feature-card" style="text-align:center;align-items:center;">
+        <span class="icon">🎼</span>
+        <h3 class="teal" style="font-size:16px;">Scale Matcher</h3>
+        <p style="font-size:12px;">進行に合うスケールを<br>理解する</p>
+      </div>
+      <div class="feature-card" style="text-align:center;align-items:center;">
+        <p style="font-size:13px;color:var(--muted);">スケールを覚えたら</p>
+        <span class="icon" style="font-size:24px;">↓</span>
+      </div>
+      <div style="grid-column:2;"></div>
+      <div class="feature-card" style="text-align:center;align-items:center;">
+        <span class="icon">🎷</span>
+        <h3 class="accent" style="font-size:16px;">Lick Generator</h3>
+        <p style="font-size:12px;">実際のフレーズで<br>音楽的に使う</p>
+      </div>
+    </div>
+    <p class="muted" style="font-size:14px;">
+      コードを覚え → スケールに繋げ → フレーズとして使う。<br>
+      この3ステップをひとつのアプリで完結できます。
+    </p>
+  </section>
+
+</div><!-- /slides -->
+
+<!-- Navigation -->
+<nav class="nav">
+  <button id="btn-prev" onclick="move(-1)" disabled>‹</button>
+  <span class="counter" id="counter">1 / 12</span>
+  <button id="btn-next" onclick="move(1)">›</button>
+</nav>
+<p class="key-hint">← → キーで移動</p>
+
+<script>
+  const slides = document.querySelectorAll('.slide');
+  const total = slides.length;
+  let cur = 0;
+
+  function go(n) {
+    slides[cur].classList.remove('active');
+    cur = Math.max(0, Math.min(total - 1, n));
+    slides[cur].classList.add('active');
+    document.getElementById('counter').textContent = `${cur + 1} / ${total}`;
+    document.getElementById('btn-prev').disabled = cur === 0;
+    document.getElementById('btn-next').disabled = cur === total - 1;
+    document.getElementById('pbar').style.width = `${(cur / (total - 1)) * 100}%`;
+  }
+
+  function move(d) { go(cur + d); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') move(1);
+    if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   move(-1);
+  });
+
+  go(0);
+</script>
+</body>
+</html>
