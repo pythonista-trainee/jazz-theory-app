@@ -1,8 +1,7 @@
 /**
  * Lick Generator — artist-attributed jazz phrases with triplets & swing.
  *
- * Each pattern has a startBeat (pickup offset) and total note beats
- * that together sum to exactly 4 beats.
+ * Each pattern's note beats + startBeat must equal totalBeats.
  */
 import type { Chord, Scale, Lick, LickNote, Duration, Octave } from "@/types/music";
 
@@ -15,19 +14,19 @@ interface NoteTemplate {
 interface LickPattern {
   artist: string;
   title: string;
-  startBeat: number; // silent beats before phrase
+  startBeat: number;
+  totalBeats: number;
   templates: NoteTemplate[];
 }
 
-// ── Artist-attributed pattern library ────────────────────────────────────────
-// Degrees are scale indices (0=root, 2=3rd, 4=5th, 6=7th).
-// Note beats + startBeat must equal 4.
-const PATTERNS: LickPattern[] = [
+// ── 1-measure patterns (totalBeats = 4) ──────────────────────────────────────
+const PATTERNS_1M: LickPattern[] = [
   // ── John Coltrane ──────────────────────────────────────────────────────────
   {
     artist: "ジョン・コルトレーン",
     title: "シーツ・オブ・サウンド",
     startBeat: 0,
+    totalBeats: 4,
     // 12 triplet 8ths = 4 beats
     templates: [
       { degree:0, duration:"eighth", triplet:true },
@@ -48,6 +47,7 @@ const PATTERNS: LickPattern[] = [
     artist: "ジョン・コルトレーン",
     title: "アルペジオ・カスケード",
     startBeat: 0,
+    totalBeats: 4,
     // 6 triplet 8ths (2 beats) + 2 quarters (2 beats) = 4 beats
     templates: [
       { degree:0, duration:"eighth", triplet:true },
@@ -66,6 +66,7 @@ const PATTERNS: LickPattern[] = [
     artist: "クリフォード・ブラウン",
     title: "ビバップ・カデンツ",
     startBeat: 0.5,
+    totalBeats: 4,
     // 7 eighth notes = 3.5 beats  (+ 0.5 pickup = 4)
     templates: [
       { degree:6, duration:"eighth" },
@@ -81,6 +82,7 @@ const PATTERNS: LickPattern[] = [
     artist: "クリフォード・ブラウン",
     title: "コード・トーン・アウトライン",
     startBeat: 0,
+    totalBeats: 4,
     // 8 eighth notes = 4 beats
     templates: [
       { degree:4, duration:"eighth" },
@@ -99,6 +101,7 @@ const PATTERNS: LickPattern[] = [
     artist: "マイルス・デイヴィス",
     title: "リリカル・ステイトメント",
     startBeat: 1,
+    totalBeats: 4,
     // 3 quarters = 3 beats  (+ 1 pickup = 4)
     templates: [
       { degree:4, duration:"quarter" },
@@ -110,7 +113,7 @@ const PATTERNS: LickPattern[] = [
     artist: "マイルス・デイヴィス",
     title: "モーダル・スペース",
     startBeat: 1.5,
-    // quarter + half = 3... no: 1+2=3 beats? Need 2.5 beats for pickup 1.5
+    totalBeats: 4,
     // 5 eighth notes = 2.5 beats  (+ 1.5 pickup = 4)
     templates: [
       { degree:5, duration:"eighth" },
@@ -126,6 +129,7 @@ const PATTERNS: LickPattern[] = [
     artist: "ロイ・ハーグローブ",
     title: "ハードバップ・グルーヴ",
     startBeat: 0.5,
+    totalBeats: 4,
     // 3 triplet 8ths (1 beat) + 5 eighths (2.5 beats) = 3.5 beats  (+ 0.5 = 4)
     templates: [
       { degree:0, duration:"eighth", triplet:true },
@@ -142,6 +146,7 @@ const PATTERNS: LickPattern[] = [
     artist: "ロイ・ハーグローブ",
     title: "シンコペーション・ライン",
     startBeat: 0,
+    totalBeats: 4,
     // quarter + 3 triplets + quarter + 3 triplets = 1+1+1+1 = 4 beats
     templates: [
       { degree:2, duration:"quarter" },
@@ -160,6 +165,7 @@ const PATTERNS: LickPattern[] = [
     artist: "チャーリー・パーカー",
     title: "エンクロージャー",
     startBeat: 0.5,
+    totalBeats: 4,
     // 7 eighth notes = 3.5 beats  (+ 0.5 = 4)
     templates: [
       { degree:1, duration:"eighth" },
@@ -177,6 +183,7 @@ const PATTERNS: LickPattern[] = [
     artist: "フレディ・ハバード",
     title: "ポストバップ・トリプレット",
     startBeat: 0,
+    totalBeats: 4,
     // 3trip(1) + q(1) + 3trip(1) + q(1) = 4 beats
     templates: [
       { degree:2, duration:"eighth", triplet:true },
@@ -195,6 +202,7 @@ const PATTERNS: LickPattern[] = [
     artist: "リー・モーガン",
     title: "ハードバップ・スウィング",
     startBeat: 0,
+    totalBeats: 4,
     // 8 eighth notes = 4 beats
     templates: [
       { degree:2, duration:"eighth" },
@@ -209,10 +217,175 @@ const PATTERNS: LickPattern[] = [
   },
 ];
 
+// ── 2-measure patterns (totalBeats = 8) ──────────────────────────────────────
+const PATTERNS_2M: LickPattern[] = [
+  // ── John Coltrane ──────────────────────────────────────────────────────────
+  {
+    artist: "ジョン・コルトレーン",
+    title: "コルトレーン・チェンジ",
+    startBeat: 0,
+    totalBeats: 8,
+    // Measure 1: 12 triplet 8ths = 4 beats
+    // Measure 2: 8 eighth notes = 4 beats
+    templates: [
+      { degree:0, duration:"eighth", triplet:true },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:6, duration:"eighth", triplet:true },
+      { degree:5, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:6, duration:"eighth", triplet:true },
+      { degree:5, duration:"eighth", triplet:true },
+      { degree:3, duration:"eighth", triplet:true },
+      { degree:1, duration:"eighth", triplet:true },
+      { degree:0, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:3, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:1, duration:"eighth" },
+      { degree:0, duration:"quarter" },
+    ],
+  },
+
+  // ── Charlie Parker ─────────────────────────────────────────────────────────
+  {
+    artist: "チャーリー・パーカー",
+    title: "バップ・ライン",
+    startBeat: 0.5,
+    totalBeats: 8,
+    // 15 eighth notes = 7.5 beats  (+ 0.5 pickup = 8)
+    templates: [
+      { degree:6, duration:"eighth" },
+      { degree:5, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:3, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:1, duration:"eighth" },
+      { degree:0, duration:"eighth" },
+      { degree:1, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:3, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:1, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:0, duration:"eighth" },
+    ],
+  },
+
+  // ── Clifford Brown ─────────────────────────────────────────────────────────
+  {
+    artist: "クリフォード・ブラウン",
+    title: "ブルー・フレーズ",
+    startBeat: 0,
+    totalBeats: 8,
+    // Measure 1: 8 eighths = 4 beats; Measure 2: 3 trip(1) + q(1) + 3 trip(1) + q(1) = 4 beats
+    templates: [
+      { degree:0, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:6, duration:"eighth" },
+      { degree:5, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:1, duration:"eighth" },
+      { degree:0, duration:"eighth", triplet:true },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:2, duration:"quarter" },
+      { degree:6, duration:"eighth", triplet:true },
+      { degree:5, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:0, duration:"quarter" },
+    ],
+  },
+
+  // ── Miles Davis ────────────────────────────────────────────────────────────
+  {
+    artist: "マイルス・デイヴィス",
+    title: "カインド・オブ・ブルー",
+    startBeat: 1,
+    totalBeats: 8,
+    // 7 beats = 14 eighths  (+ 1 pickup = 8)
+    templates: [
+      { degree:4, duration:"eighth" },
+      { degree:5, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:0, duration:"quarter" },
+      { degree:2, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:6, duration:"eighth" },
+      { degree:5, duration:"eighth" },
+      { degree:4, duration:"eighth" },
+      { degree:2, duration:"half" },
+    ],
+  },
+
+  // ── Freddie Hubbard ────────────────────────────────────────────────────────
+  {
+    artist: "フレディ・ハバード",
+    title: "ハバード・ライド",
+    startBeat: 0,
+    totalBeats: 8,
+    // M1: 3trip(1)+q(1)+3trip(1)+q(1) = 4; M2: 3trip(1)+3trip(1)+half(2) = 4
+    templates: [
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:6, duration:"eighth", triplet:true },
+      { degree:4, duration:"quarter" },
+      { degree:0, duration:"eighth", triplet:true },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:0, duration:"quarter" },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:5, duration:"eighth", triplet:true },
+      { degree:6, duration:"eighth", triplet:true },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:3, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:0, duration:"half" },
+    ],
+  },
+
+  // ── Roy Hargrove ───────────────────────────────────────────────────────────
+  {
+    artist: "ロイ・ハーグローブ",
+    title: "ハーグローブ・グルーヴ",
+    startBeat: 0.5,
+    totalBeats: 8,
+    // 15 eighth notes = 7.5 beats  (+ 0.5 pickup = 8)
+    templates: [
+      { degree:0, duration:"eighth", triplet:true },
+      { degree:1, duration:"eighth", triplet:true },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth" },
+      { degree:3, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:1, duration:"eighth" },
+      { degree:0, duration:"quarter" },
+      { degree:2, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth", triplet:true },
+      { degree:6, duration:"eighth", triplet:true },
+      { degree:4, duration:"eighth" },
+      { degree:2, duration:"eighth" },
+      { degree:1, duration:"eighth" },
+      { degree:0, duration:"eighth" },
+    ],
+  },
+];
+
+const ALL_PATTERNS = [...PATTERNS_1M, ...PATTERNS_2M];
+
 // ── Builder ───────────────────────────────────────────────────────────────────
 
 export function generateLick(chord: Chord, scale: Scale): Lick {
-  const pattern = PATTERNS[Math.floor(Math.random() * PATTERNS.length)];
+  const pattern = ALL_PATTERNS[Math.floor(Math.random() * ALL_PATTERNS.length)];
 
   const notes: LickNote[] = pattern.templates.map(({ degree, duration, triplet }) => {
     const noteIndex = degree % scale.notes.length;
@@ -235,6 +408,7 @@ export function generateLick(chord: Chord, scale: Scale): Lick {
     abc: toABC(notes, chord.symbol, pattern.startBeat),
     bpm: 120,
     startBeat: pattern.startBeat,
+    totalBeats: pattern.totalBeats,
   };
 }
 

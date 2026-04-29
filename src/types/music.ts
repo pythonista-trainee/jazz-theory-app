@@ -79,6 +79,8 @@ export interface Lick {
   bpm: number;
   /** Beat offset before phrase starts (0 = downbeat, 0.5 = off-beat pickup) */
   startBeat: number;
+  /** Total beats in the phrase (4 = 1 measure, 8 = 2 measures) */
+  totalBeats: number;
 }
 
 // ── Quiz ──────────────────────────────────────────────────────────────────────

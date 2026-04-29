@@ -6,29 +6,21 @@ import { buildChord } from "@/lib/theory/chordEngine";
 import { getScalesForChord } from "@/lib/theory/scaleEngine";
 import { generateLick } from "@/lib/lick/lickGenerator";
 import { LickScoreViewer } from "@/components/score/LickScoreViewer";
+import { ChordPicker } from "@/components/chord/ChordPicker";
 import { Button } from "@/components/ui/Button";
 import { formatNote } from "@/lib/theory/noteFormat";
 import { useInstrument } from "@/context/InstrumentContext";
 import { getInstrument } from "@/lib/audio/instruments";
-
-const CHORD_PRESETS = [
-  "Dm7", "G7", "Cmaj7", "Am7", "Fm7", "Bb7", "Ebmaj7",
-  "Bm7b5", "E7", "Bdim7", "C7", "Abmaj7",
-];
 
 const DURATION_BEATS: Record<string, number> = {
   whole: 4, half: 2, quarter: 1, eighth: 0.5, sixteenth: 0.25,
 };
 
 /**
- * スウィング＋三連符対応のタイムテーブル計算。
- *
- * - 八分音符: 表拍(long)・裏拍(short)を交互に割り当て（スウィング）
- * - 三連符: 1/3 拍を均等割り、スウィング適用なし
- * - 四分音符以上: ストレートタイミング
- *
- * `straightBeatPos` は on/off beat 判定用の直線的な拍位置。
- * `t` は実際のスウィング適用後の発音時刻。
+ * Swing+triplet time schedule.
+ * - Triplet 8ths: 1/3 beat each, no swing
+ * - 8th notes: long (on-beat) / short (off-beat) swing
+ * - Quarter+: straight
  */
 function computeSwingSchedule(
   notes: LickNote[],
@@ -41,7 +33,7 @@ function computeSwingSchedule(
   const shortSec = beatSec * (1 - swingRatio);
 
   let t = 0;
-  let straightBeatPos = startBeat; // 判定用の直線位置
+  let straightBeatPos = startBeat;
 
   return notes.map((note) => {
     const startSec = t;
@@ -49,11 +41,9 @@ function computeSwingSchedule(
     let straightAdvance: number;
 
     if (note.triplet) {
-      // 三連符: スウィングなし、1/3拍均等
       advanceSec = beatSec / 3;
       straightAdvance = 1 / 3;
     } else if (note.duration === "eighth") {
-      // オンビートかどうかは直線位置の小数部で判定
       const frac = straightBeatPos - Math.floor(straightBeatPos);
       const isOnBeat = frac < 0.12 || frac > 0.88;
       advanceSec = isOnBeat ? longSec : shortSec;
@@ -92,14 +82,36 @@ export default function LickGeneratorPage() {
       await Tone.start();
       const inst = getInstrument(instrumentId);
       const synth = inst.createSynth(Tone);
+
       const schedule = computeSwingSchedule(lick.notes, lick.bpm, lick.startBeat);
       const now = Tone.now();
+      const beatSec = 60 / lick.bpm;
+
+      // Schedule melody notes
       lick.notes.forEach((n, i) => {
         const { startSec, durationSec } = schedule[i];
         synth.triggerAttackRelease(`${n.note}${n.octave}`, durationSec, now + startSec);
       });
+
+      // Quarter-note click track
+      const totalBeats = lick.totalBeats ?? 4;
+      const clickSynth = new Tone.Synth({
+        oscillator: { type: "triangle" },
+        envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 },
+        volume: -12,
+      }).toDestination();
+
+      for (let beat = 0; beat < totalBeats; beat++) {
+        clickSynth.triggerAttackRelease("G5", "32n", now + beat * beatSec);
+      }
+
       const last = schedule[schedule.length - 1];
-      setTimeout(() => { synth.dispose(); setIsPlaying(false); }, (last.startSec + last.durationSec) * 1000 + 600);
+      const totalSec = last.startSec + last.durationSec;
+      setTimeout(() => {
+        synth.dispose();
+        clickSynth.dispose();
+        setIsPlaying(false);
+      }, totalSec * 1000 + 600);
     } catch (e) {
       console.error(e);
       setIsPlaying(false);
@@ -116,23 +128,9 @@ export default function LickGeneratorPage() {
       </div>
 
       {/* Chord picker */}
-      <div className="mb-6">
+      <div className="bg-jazz-card border border-white/10 rounded-2xl p-5 mb-6">
         <p className="text-xs uppercase tracking-widest text-jazz-muted mb-3">コードを選択</p>
-        <div className="flex flex-wrap gap-2">
-          {CHORD_PRESETS.map((c) => (
-            <button
-              key={c}
-              onClick={() => { setChordSymbol(c); setLick(null); }}
-              className={`px-4 py-2 rounded-xl font-mono font-bold text-sm border transition-all ${
-                chordSymbol === c
-                  ? "bg-jazz-accent border-jazz-accent text-white"
-                  : "bg-jazz-card border-white/10 text-jazz-muted hover:border-white/30"
-              }`}
-            >
-              {formatNote(c)}
-            </button>
-          ))}
-        </div>
+        <ChordPicker value={chordSymbol} onChange={(s) => { setChordSymbol(s); setLick(null); }} />
       </div>
 
       {/* Scale info */}
@@ -182,6 +180,11 @@ export default function LickGeneratorPage() {
             </div>
             <div className="flex flex-wrap gap-2 text-xs">
               <span className="px-2 py-1 bg-jazz-surface rounded-md text-jazz-muted">🎵 Swing</span>
+              {(lick.totalBeats ?? 4) > 4 && (
+                <span className="px-2 py-1 bg-jazz-surface rounded-md text-jazz-muted">
+                  2小節
+                </span>
+              )}
               {lick.startBeat > 0 && (
                 <span className="px-2 py-1 bg-jazz-surface rounded-md text-jazz-muted">
                   ↩ Pickup +{lick.startBeat}拍
@@ -195,8 +198,13 @@ export default function LickGeneratorPage() {
             </div>
           </div>
 
-          {/* Responsive score — no fixed width needed */}
-          <LickScoreViewer notes={lick.notes} startBeat={lick.startBeat} height={160} />
+          {/* Responsive score */}
+          <LickScoreViewer
+            notes={lick.notes}
+            startBeat={lick.startBeat}
+            totalBeats={lick.totalBeats ?? 4}
+            height={160}
+          />
 
           {/* Note badges */}
           <div className="flex flex-wrap gap-2">
