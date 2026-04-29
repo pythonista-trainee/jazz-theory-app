@@ -1,0 +1,928 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Jazz Theory App — 使い方ガイド</title>
+<style>
+/* ── Reset ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+/* ── Fonts ── */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=JetBrains+Mono:wght@400;700&display=swap');
+
+/* ── Variables ── */
+:root {
+  --bg:       #0e0e14;
+  --card:     #17171f;
+  --surface:  #1f1f2b;
+  --border:   #2e2e3e;
+  --gold:     #e8b84b;
+  --gold-lt:  #f5d98a;
+  --accent:   #7c5cfc;
+  --teal:     #2dcfbe;
+  --muted:    #7a7a99;
+  --text:     #e0e0ee;
+  --white:    #ffffff;
+}
+
+/* ── Page shell ── */
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 10pt;
+  line-height: 1.75;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+/* ── Page ── */
+.page {
+  width: 210mm;
+  min-height: 297mm;
+  margin: 0 auto 32px;
+  background: var(--bg);
+  position: relative;
+  overflow: hidden;
+  padding: 18mm 16mm 16mm;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+/* decorative top bar */
+.page::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--accent), var(--gold), var(--teal));
+}
+
+/* ── Page header ── */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 10mm;
+}
+.app-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.app-logo .dot {
+  width: 28px; height: 28px;
+  background: linear-gradient(135deg, var(--accent), var(--gold));
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px;
+}
+.app-logo .name {
+  font-size: 13pt;
+  font-weight: 900;
+  color: var(--white);
+  letter-spacing: -.01em;
+}
+.app-logo .name span { color: var(--gold); }
+.page-num {
+  font-size: 9pt;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ── Section tag ── */
+.section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 3px 12px;
+  font-size: 8pt;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: 5mm;
+}
+.tag-overview { background: rgba(124,92,252,0.18); color: var(--accent); border: 1px solid rgba(124,92,252,0.4); }
+.tag-chord    { background: rgba(232,184,75,0.15); color: var(--gold);   border: 1px solid rgba(232,184,75,0.4); }
+.tag-scale    { background: rgba(45,207,190,0.15); color: var(--teal);   border: 1px solid rgba(45,207,190,0.35); }
+.tag-lick     { background: rgba(124,92,252,0.15); color: #a78bfa;       border: 1px solid rgba(167,139,250,0.35); }
+
+/* ── Headings ── */
+h1 {
+  font-size: 24pt;
+  font-weight: 900;
+  line-height: 1.15;
+  color: var(--white);
+  letter-spacing: -.02em;
+  margin-bottom: 5mm;
+}
+h1 .accent { color: var(--gold); }
+h2 {
+  font-size: 17pt;
+  font-weight: 900;
+  color: var(--white);
+  letter-spacing: -.01em;
+  margin-bottom: 4mm;
+}
+h3 {
+  font-size: 11pt;
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 2mm;
+}
+
+.lead {
+  font-size: 10.5pt;
+  color: var(--muted);
+  line-height: 1.85;
+  margin-bottom: 7mm;
+}
+.lead strong { color: var(--text); font-weight: 700; }
+
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 6mm 0;
+}
+
+/* ── Feature cards row ── */
+.feature-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4mm;
+  margin-bottom: 7mm;
+}
+.feature-card {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 5mm 5mm 4mm;
+}
+.feature-card .icon { font-size: 20pt; margin-bottom: 2mm; display: block; }
+.feature-card h3 { font-size: 10pt; margin-bottom: 1mm; }
+.feature-card p  { font-size: 8.5pt; color: var(--muted); line-height: 1.6; }
+.feature-card.gold-border  { border-color: rgba(232,184,75,0.35); }
+.feature-card.teal-border  { border-color: rgba(45,207,190,0.3); }
+.feature-card.accent-border{ border-color: rgba(124,92,252,0.4); }
+
+/* ── Two-col ── */
+.two-col {
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 7mm;
+  margin-bottom: 6mm;
+}
+.two-col.even { grid-template-columns: 1fr 1fr; }
+
+/* ── Step list ── */
+.steps { display: flex; flex-direction: column; gap: 2.5mm; }
+.step {
+  display: flex;
+  align-items: flex-start;
+  gap: 3mm;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3mm 4mm;
+}
+.step-num {
+  min-width: 20px; height: 20px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 8pt; font-weight: 900; color: #fff;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+.step-num.gold   { background: var(--gold); color: #111; }
+.step-num.teal   { background: var(--teal); color: #111; }
+.step-num.accent { background: var(--accent); }
+.step-body h4 { font-size: 9.5pt; font-weight: 700; color: var(--text); margin-bottom: 0.5mm; }
+.step-body p  { font-size: 8.5pt; color: var(--muted); line-height: 1.6; }
+
+/* ── Info box ── */
+.info-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4mm 5mm;
+}
+.info-box .label {
+  font-size: 7.5pt;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 2.5mm;
+}
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5mm 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 8.5pt;
+}
+.info-row:last-child { border-bottom: none; }
+.info-row .key   { color: var(--muted); }
+.info-row .val   { color: var(--text); font-weight: 700; }
+.info-row .val.gold { color: var(--gold); }
+
+/* ── Badge strip ── */
+.badges {
+  display: flex; flex-wrap: wrap; gap: 2mm;
+  margin: 2.5mm 0;
+}
+.badge {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  padding: 1.5mm 3mm;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8pt;
+  color: var(--teal);
+}
+.badge.gold { color: var(--gold); }
+
+/* ── Chord grid mockup ── */
+.chord-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 2.5mm;
+}
+.chord-cell {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  padding: 3mm;
+  text-align: center;
+}
+.chord-cell .role  { font-size: 7pt; color: var(--muted); margin-bottom: 0.5mm; }
+.chord-cell .name  { font-size: 14pt; font-weight: 900; color: var(--gold); font-family: 'JetBrains Mono',monospace; }
+.chord-cell .scale { font-size: 7pt; color: var(--teal); margin-top: 0.5mm; }
+.chord-cell .stars { font-size: 7pt; color: #fbbf24; }
+
+/* ── Quiz mockup ── */
+.quiz-choices {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2mm;
+  margin-top: 2.5mm;
+}
+.choice {
+  border-radius: 7px;
+  padding: 2.5mm 3.5mm;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 8pt;
+  text-align: center;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+}
+.choice.correct {
+  background: rgba(45,207,190,0.15);
+  border-color: rgba(45,207,190,0.5);
+  color: var(--teal);
+}
+
+/* ── Difficulty bars ── */
+.diff-list { display: flex; flex-direction: column; gap: 2mm; }
+.diff-item {
+  display: flex;
+  align-items: center;
+  gap: 3mm;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 3mm 4mm;
+}
+.diff-label {
+  min-width: 28px;
+  font-size: 8.5pt;
+  font-weight: 900;
+  color: var(--white);
+}
+.diff-desc { font-size: 8pt; color: var(--muted); }
+.diff-item.active { border-color: rgba(124,92,252,0.45); background: rgba(124,92,252,0.08); }
+.diff-item.active .diff-label { color: #c4b5fd; }
+
+/* ── Instrument chips ── */
+.inst-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2mm;
+}
+.inst-chip {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 2.5mm 3mm;
+  font-size: 8.5pt;
+  display: flex;
+  align-items: center;
+  gap: 2.5mm;
+}
+.inst-chip.default { border-color: rgba(232,184,75,0.4); }
+.inst-chip .em { font-size: 13pt; }
+.inst-chip .txt .name { font-weight: 700; color: var(--text); font-size: 8.5pt; }
+.inst-chip .txt .sub  { font-size: 7.5pt; color: var(--muted); }
+.inst-chip.default .txt .name { color: var(--gold); }
+
+/* ── Flow diagram ── */
+.flow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4mm;
+  margin: 5mm 0;
+}
+.flow-box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 4mm 6mm;
+  text-align: center;
+  flex: 1;
+}
+.flow-box .icon { font-size: 18pt; display: block; margin-bottom: 1mm; }
+.flow-box h4 { font-size: 9.5pt; font-weight: 900; }
+.flow-box p  { font-size: 8pt; color: var(--muted); margin-top: 0.5mm; line-height: 1.5; }
+.flow-box.gold-b   { border-color: rgba(232,184,75,0.4); }
+.flow-box.teal-b   { border-color: rgba(45,207,190,0.35); }
+.flow-box.accent-b { border-color: rgba(124,92,252,0.4); }
+.arrow { color: var(--muted); font-size: 14pt; }
+
+/* ── Footer ── */
+.page-footer {
+  margin-top: auto;
+  padding-top: 5mm;
+  border-top: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  font-size: 7.5pt;
+  color: var(--muted);
+}
+
+/* ══════════════════════════════════════
+   PRINT STYLES
+══════════════════════════════════════ */
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  body { margin: 0; background: var(--bg); }
+  .page {
+    margin: 0;
+    width: 210mm;
+    min-height: 297mm;
+    height: 297mm;
+    page-break-after: always;
+    break-after: page;
+  }
+  .page:last-child { page-break-after: avoid; break-after: avoid; }
+
+  /* PDF hint hidden when printing */
+  .pdf-hint { display: none; }
+}
+
+/* ── On-screen PDF hint ── */
+.pdf-hint {
+  position: fixed;
+  top: 16px; right: 16px;
+  background: rgba(22,22,30,0.95);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px 18px;
+  font-size: 11px;
+  color: var(--muted);
+  z-index: 999;
+  line-height: 1.7;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.pdf-hint strong { color: var(--gold); display: block; margin-bottom: 2px; }
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PDF HINT (画面表示のみ)
+══════════════════════════════════════════════════════════════ -->
+<div class="pdf-hint">
+  <strong>📄 PDFとして保存する方法</strong>
+  Ctrl+P（Mac: ⌘+P）→「PDFとして保存」<br>
+  余白: なし、背景のグラフィック: ON
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE 1 — OVERVIEW
+══════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <header class="page-header">
+    <div class="app-logo">
+      <div class="dot">🎷</div>
+      <div class="name">Jazz Theory <span>App</span></div>
+    </div>
+    <div class="page-num">01 / 04</div>
+  </header>
+
+  <div class="section-tag tag-overview">Overview</div>
+
+  <h1>ジャズ理論を<br><span class="accent">実音で学ぶ</span>アプリ</h1>
+
+  <p class="lead">
+    アドリブ演奏に必要な <strong>コード・スケール・フレーズ</strong> を、<br>
+    バラバラに暗記するのではなく <strong>音を出しながら一体で身につける</strong> ためのウェブアプリです。
+  </p>
+
+  <div class="feature-row">
+    <div class="feature-card gold-border">
+      <span class="icon">🎹</span>
+      <h3 style="color: var(--gold);">Chord Master</h3>
+      <p>コードの構成音を視覚・聴覚で理解し、クイズで定着させる</p>
+    </div>
+    <div class="feature-card teal-border">
+      <span class="icon">🎼</span>
+      <h3 style="color: var(--teal);">Scale Matcher</h3>
+      <p>II–V–I進行の各コードに合うスケールを理論根拠とともに確認する</p>
+    </div>
+    <div class="feature-card accent-border">
+      <span class="icon">🎷</span>
+      <h3 style="color: #a78bfa;">Lick Generator</h3>
+      <p>伝説のジャズマン由来フレーズを生成し、スウィングで演奏する</p>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <h3 style="margin-bottom:4mm;">このアプリで身につくこと</h3>
+  <div class="two-col even">
+    <div class="steps">
+      <div class="step">
+        <div class="step-num accent">1</div>
+        <div class="step-body">
+          <h4>コードトーンの即答力</h4>
+          <p>「Dm7 を見た瞬間に D・F・A・C が浮かぶ」反射神経をクイズで養う</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num accent">2</div>
+        <div class="step-body">
+          <h4>スケール選択の判断力</h4>
+          <p>G7 にはミクソリディアンか、オルタードか。文脈に応じて選べるようになる</p>
+        </div>
+      </div>
+    </div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-num accent">3</div>
+        <div class="step-body">
+          <h4>フレーズの耳コピ力</h4>
+          <p>プロの Lick を五線譜と実音で確認することで耳と手を連動させる</p>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num accent">4</div>
+        <div class="step-body">
+          <h4>スウィング感覚</h4>
+          <p>カウントイン＋クリック付き演奏で、譜面上の音符をリズムで体感する</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider"></div>
+
+  <p style="font-size:9pt;margin-bottom:4mm;font-weight:700;color:var(--text);">学習の流れ</p>
+  <div class="flow">
+    <div class="flow-box gold-b">
+      <span class="icon">🎹</span>
+      <h4 style="color:var(--gold);">Chord Master</h4>
+      <p>構成音を<br>記憶する</p>
+    </div>
+    <div class="arrow">→</div>
+    <div class="flow-box teal-b">
+      <span class="icon">🎼</span>
+      <h4 style="color:var(--teal);">Scale Matcher</h4>
+      <p>使えるスケールを<br>理解する</p>
+    </div>
+    <div class="arrow">→</div>
+    <div class="flow-box accent-b">
+      <span class="icon">🎷</span>
+      <h4 style="color:#a78bfa;">Lick Generator</h4>
+      <p>フレーズとして<br>音楽的に使う</p>
+    </div>
+  </div>
+
+  <div class="divider" style="margin-top:auto;"></div>
+  <footer class="page-footer">
+    <span>Jazz Theory App — 使い方ガイド</span>
+    <span>Overview</span>
+  </footer>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE 2 — CHORD MASTER
+══════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <header class="page-header">
+    <div class="app-logo">
+      <div class="dot">🎷</div>
+      <div class="name">Jazz Theory <span>App</span></div>
+    </div>
+    <div class="page-num">02 / 04</div>
+  </header>
+
+  <div class="section-tag tag-chord">🎹 Chord Master</div>
+  <h2 style="color:var(--gold);">コードを見て・聴いて・覚える</h2>
+  <p class="lead">
+    ジャズで頻出する全コードの構成音を、<strong>五線譜・音声・クイズ</strong>の3つのアプローチで習得します。<br>
+    「コード学習」と「クイズ」の2タブで構成されています。
+  </p>
+
+  <div class="two-col">
+    <!-- LEFT: Study -->
+    <div>
+      <h3 style="color:var(--gold);margin-bottom:3mm;">① コード学習タブ</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num gold">1</div>
+          <div class="step-body">
+            <h4>クオリティを選ぶ</h4>
+            <p>4グループ（メジャー系・マイナー系・ドミナント系・特殊）から種類を選択</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num gold">2</div>
+          <div class="step-body">
+            <h4>ルート音を選ぶ</h4>
+            <p>C〜B の12音から根音を選ぶ。画面中央にコード名が大きく表示される</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num gold">3</div>
+          <div class="step-body">
+            <h4>五線譜で構成音を確認</h4>
+            <p>選択コードの音符が楽譜にリアルタイム表示。音名バッジも同時に確認できる</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num gold">4</div>
+          <div class="step-body">
+            <h4>▶ ボタンで演奏</h4>
+            <p>選択中の楽器（オルガン・ピアノ・サックスなど）でコードを鳴らして音程を耳に刻む</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <p style="font-size:8pt;color:var(--muted);margin-bottom:2mm;">対応コードクオリティ（16種）</p>
+      <div class="badges">
+        <span class="badge gold">maj7</span>
+        <span class="badge gold">maj9</span>
+        <span class="badge gold">6</span>
+        <span class="badge">m7</span>
+        <span class="badge">m9</span>
+        <span class="badge">m6</span>
+        <span class="badge">7</span>
+        <span class="badge">9</span>
+        <span class="badge">7♭9</span>
+        <span class="badge">7♯9</span>
+        <span class="badge">7♯11</span>
+        <span class="badge">7♭13</span>
+        <span class="badge">m7♭5</span>
+        <span class="badge">dim7</span>
+        <span class="badge">aug</span>
+        <span class="badge">sus4</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: Quiz + info box -->
+    <div>
+      <h3 style="color:var(--gold);margin-bottom:3mm;">② クイズタブ</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num gold">1</div>
+          <div class="step-body">
+            <h4>問題数とモードを設定</h4>
+            <p>5〜30問で選択。モードは「コード→構成音」「構成音→コード名」「ミックス」の3種</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num gold">2</div>
+          <div class="step-body">
+            <h4>4択で回答する</h4>
+            <p>コード名を見て正しい構成音を選ぶ、または音名を見てコード名を当てる</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num gold">3</div>
+          <div class="step-body">
+            <h4>スコアを確認</h4>
+            <p>全問終了後に正答率を表示。繰り返すことで定着度が上がる</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <!-- Quiz example -->
+      <div class="info-box">
+        <div class="label">クイズ例 — コード → 構成音</div>
+        <div style="text-align:center;padding:2mm 0;">
+          <span style="font-size:22pt;font-weight:900;color:var(--gold);font-family:'JetBrains Mono',monospace;">Dm7</span>
+          <p style="font-size:8pt;color:var(--muted);margin-top:1mm;">この和音の構成音は？</p>
+        </div>
+        <div class="quiz-choices">
+          <div class="choice correct">D · F · A · C ✓</div>
+          <div class="choice">D · F♯ · A · C♯</div>
+          <div class="choice">D · F · A♭ · C</div>
+          <div class="choice">D · F · A · B</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider" style="margin-top:auto;"></div>
+  <footer class="page-footer">
+    <span>Jazz Theory App — 使い方ガイド</span>
+    <span>Chord Master</span>
+  </footer>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE 3 — SCALE MATCHER
+══════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <header class="page-header">
+    <div class="app-logo">
+      <div class="dot">🎷</div>
+      <div class="name">Jazz Theory <span>App</span></div>
+    </div>
+    <div class="page-num">03 / 04</div>
+  </header>
+
+  <div class="section-tag tag-scale">🎼 Scale Matcher</div>
+  <h2 style="color:var(--teal);">コード進行に合うスケールを探す</h2>
+  <p class="lead">
+    ジャズの基本進行 <strong>II–V–I</strong> に対して、各コードで<strong>どのスケールを弾くか</strong>を<br>
+    理論的根拠（★評価）とともに確認・比較・試聴できます。全12キーに対応。
+  </p>
+
+  <div class="two-col">
+    <!-- LEFT: how to use -->
+    <div>
+      <h3 style="color:var(--teal);margin-bottom:3mm;">操作方法</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num teal">1</div>
+          <div class="step-body">
+            <h4>キーを選ぶ</h4>
+            <p>画面上部のボタンから調を選択（C〜B 全12キー）。II–V–I進行が自動更新される</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num teal">2</div>
+          <div class="step-body">
+            <h4>コードカードをタップ</h4>
+            <p>Dm7・G7・Cmaj7 の各カードをタップすると、推奨スケールの五線譜とスケール音が展開される</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num teal">3</div>
+          <div class="step-body">
+            <h4>★評価で最適スケールを把握</h4>
+            <p>★5が最も相性の良いスケール。タブを切り替えて代替スケールも確認できる</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num teal">4</div>
+          <div class="step-body">
+            <h4>▶ で上昇スケールを試聴</h4>
+            <p>ルートから1オクターブ上まで順番に演奏。スケールの音程感を耳で覚える</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <p style="font-size:8pt;color:var(--muted);margin-bottom:2mm;">代替スケールの例（G7 の場合）</p>
+      <div class="badges">
+        <span class="badge">G Mixolydian ★★★★★</span>
+        <span class="badge">G Altered ★★★★</span>
+        <span class="badge">G Lydian Dom. ★★★★</span>
+        <span class="badge">G HW Dim. ★★★</span>
+      </div>
+    </div>
+
+    <!-- RIGHT: chord grid -->
+    <div>
+      <h3 style="color:var(--teal);margin-bottom:3mm;">表示例（キー C）</h3>
+      <div class="chord-grid">
+        <div class="chord-cell">
+          <div class="role">II</div>
+          <div class="name">Dm7</div>
+          <div class="scale">D Dorian</div>
+          <div class="stars">★★★★★</div>
+        </div>
+        <div class="chord-cell">
+          <div class="role">V</div>
+          <div class="name">G7</div>
+          <div class="scale">G Mixolydian</div>
+          <div class="stars">★★★★★</div>
+        </div>
+        <div class="chord-cell">
+          <div class="role">I</div>
+          <div class="name">Cmaj7</div>
+          <div class="scale">C Major</div>
+          <div class="stars">★★★★★</div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h3 style="color:var(--teal);margin-bottom:3mm;">★評価の見方</h3>
+      <div class="info-box">
+        <div class="info-row">
+          <span class="key">★★★★★</span>
+          <span class="val" style="color:#fbbf24;">最も理論的に合致するスケール</span>
+        </div>
+        <div class="info-row">
+          <span class="key">★★★★☆</span>
+          <span class="val">よく使われる代替スケール</span>
+        </div>
+        <div class="info-row">
+          <span class="key">★★★☆☆</span>
+          <span class="val">アウト感を出したい場合に有効</span>
+        </div>
+        <div class="info-row">
+          <span class="key">★★☆☆☆</span>
+          <span class="val">上級者向けの色付けスケール</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <p style="font-size:8pt;color:var(--muted);margin-bottom:2mm;">対応スケール種類（一部）</p>
+      <div class="badges">
+        <span class="badge">Dorian</span>
+        <span class="badge">Mixolydian</span>
+        <span class="badge">Altered</span>
+        <span class="badge">Lydian Dom.</span>
+        <span class="badge">HW Diminished</span>
+        <span class="badge">Melodic Minor</span>
+        <span class="badge">Bebop</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="divider" style="margin-top:auto;"></div>
+  <footer class="page-footer">
+    <span>Jazz Theory App — 使い方ガイド</span>
+    <span>Scale Matcher</span>
+  </footer>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     PAGE 4 — LICK GENERATOR
+══════════════════════════════════════════════════════════════ -->
+<div class="page">
+  <header class="page-header">
+    <div class="app-logo">
+      <div class="dot">🎷</div>
+      <div class="name">Jazz Theory <span>App</span></div>
+    </div>
+    <div class="page-num">04 / 04</div>
+  </header>
+
+  <div class="section-tag tag-lick">🎷 Lick Generator</div>
+  <h2 style="color:#a78bfa;">プロのフレーズを生成・練習する</h2>
+  <p class="lead">
+    チャーリー・パーカーやコルトレーンなど<strong>伝説のジャズマン</strong>が使うフレーズを<br>
+    選択コードに合わせて生成し、<strong>スウィングで演奏</strong>します。五線譜表示付き。
+  </p>
+
+  <div class="two-col">
+    <!-- LEFT: steps -->
+    <div>
+      <h3 style="color:#a78bfa;margin-bottom:3mm;">操作方法</h3>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num accent">1</div>
+          <div class="step-body">
+            <h4>難易度を選ぶ</h4>
+            <p>初級・中級・上級の3段階。自分のレベルに合わせてスタート</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num accent">2</div>
+          <div class="step-body">
+            <h4>コードを選ぶ</h4>
+            <p>クオリティ（m7・7・maj7 など）とルート音を選択。Chord Master と同じUIで操作できる</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num accent">3</div>
+          <div class="step-body">
+            <h4>「Lickを生成」を押す</h4>
+            <p>難易度×コードに合ったパターンがランダムに選ばれ、五線譜とアーティスト名が表示される</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num accent">4</div>
+          <div class="step-body">
+            <h4>「▶ 演奏」で音を確認</h4>
+            <p>4拍カウントインの後スウィングで演奏。演奏中はクリック音がテンポをキープ</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num accent">5</div>
+          <div class="step-body">
+            <h4>楽器で真似する</h4>
+            <p>五線譜を見ながら自分の楽器で演奏。↩ Pickup 表示がある場合は休んでから吹き出す</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: details -->
+    <div>
+      <h3 style="color:#a78bfa;margin-bottom:3mm;">難易度の目安</h3>
+      <div class="diff-list" style="margin-bottom:5mm;">
+        <div class="diff-item">
+          <span class="diff-label">初級</span>
+          <span class="diff-desc">8分音符・四分音符中心。三連符なし〜1グループ。まずはここから</span>
+        </div>
+        <div class="diff-item active">
+          <span class="diff-label">中級</span>
+          <span class="diff-desc">三連符あり・1小節フレーズ。スウィング感を身につける段階</span>
+        </div>
+        <div class="diff-item">
+          <span class="diff-label">上級</span>
+          <span class="diff-desc">複雑な三連符・2小節フレーズ。コルトレーン級の難易度</span>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <h3 style="color:#a78bfa;margin-bottom:3mm;">収録アーティスト</h3>
+      <div class="badges" style="margin-bottom:5mm;">
+        <span class="badge">Charlie Parker</span>
+        <span class="badge">John Coltrane</span>
+        <span class="badge">Miles Davis</span>
+        <span class="badge">Clifford Brown</span>
+        <span class="badge">Roy Hargrove</span>
+        <span class="badge">Freddie Hubbard</span>
+        <span class="badge">Lee Morgan</span>
+      </div>
+
+      <div class="divider"></div>
+
+      <h3 style="color:#a78bfa;margin-bottom:3mm;">楽器セレクタ（全機能共通）</h3>
+      <div class="inst-grid">
+        <div class="inst-chip default">
+          <span class="em">⛪</span>
+          <div class="txt"><div class="name">オルガン</div><div class="sub">デフォルト</div></div>
+        </div>
+        <div class="inst-chip">
+          <span class="em">🎹</span>
+          <div class="txt"><div class="name">ピアノ</div><div class="sub">クリアな音</div></div>
+        </div>
+        <div class="inst-chip">
+          <span class="em">🎷</span>
+          <div class="txt"><div class="name">サックス</div><div class="sub">管楽器系</div></div>
+        </div>
+        <div class="inst-chip">
+          <span class="em">🎺</span>
+          <div class="txt"><div class="name">トランペット</div><div class="sub">管楽器系</div></div>
+        </div>
+        <div class="inst-chip">
+          <span class="em">🎸</span>
+          <div class="txt"><div class="name">ギター</div><div class="sub">プラック系</div></div>
+        </div>
+        <div class="inst-chip">
+          <span class="em">🎻</span>
+          <div class="txt"><div class="name">ストリングス</div><div class="sub">弦楽器系</div></div>
+        </div>
+      </div>
+      <p style="font-size:7.5pt;color:var(--muted);margin-top:2mm;">右上のアイコンからいつでも切り替え可能。全機能の再生に即座に反映。</p>
+    </div>
+  </div>
+
+  <div class="divider" style="margin-top:auto;"></div>
+  <footer class="page-footer">
+    <span>Jazz Theory App — 使い方ガイド</span>
+    <span>Lick Generator</span>
+  </footer>
+</div>
+
+</body>
+</html>
