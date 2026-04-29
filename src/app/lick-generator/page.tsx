@@ -32,7 +32,8 @@ function computeSwingSchedule(
   const longSec  = beatSec * swingRatio;
   const shortSec = beatSec * (1 - swingRatio);
 
-  let t = 0;
+  // Start t at startBeat so pickup rests are honoured in the audio schedule
+  let t = startBeat * beatSec;
   let straightBeatPos = startBeat;
 
   return notes.map((note) => {
@@ -63,6 +64,7 @@ function computeSwingSchedule(
 export default function LickGeneratorPage() {
   const [chordSymbol, setChordSymbol] = useState("Dm7");
   const [difficulty, setDifficulty] = useState<Difficulty>("medium");
+  const [countIn, setCountIn] = useState(true);
   const [lick, setLick] = useState<Lick | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const { instrumentId } = useInstrument();
@@ -86,24 +88,25 @@ export default function LickGeneratorPage() {
 
       const schedule = computeSwingSchedule(lick.notes, lick.bpm, lick.startBeat);
       const beatSec = 60 / lick.bpm;
-      const countInBeats = 4;
-      const countInSec = countInBeats * beatSec;
+      const countInSec = countIn ? 4 * beatSec : 0;
       const now = Tone.now();
 
-      // Click synth (shared for count-in and lick)
+      // Click synth (count-in + lick downbeats)
       const clickSynth = new Tone.Synth({
         oscillator: { type: "triangle" },
         envelope: { attack: 0.001, decay: 0.08, sustain: 0, release: 0.05 },
         volume: -10,
       }).toDestination();
 
-      // 4-beat count-in (beat 1 slightly higher pitch)
-      for (let beat = 0; beat < countInBeats; beat++) {
-        const pitch = beat === 0 ? "C6" : "G5";
-        clickSynth.triggerAttackRelease(pitch, "32n", now + beat * beatSec);
+      // Count-in clicks
+      if (countIn) {
+        for (let beat = 0; beat < 4; beat++) {
+          const pitch = beat === 0 ? "C6" : "G5";
+          clickSynth.triggerAttackRelease(pitch, "32n", now + beat * beatSec);
+        }
       }
 
-      // Lick melody (offset by count-in)
+      // Lick melody (offset by count-in; startBeat rest is baked into schedule[i].startSec)
       lick.notes.forEach((n, i) => {
         const { startSec, durationSec } = schedule[i];
         synth.triggerAttackRelease(
@@ -192,16 +195,35 @@ export default function LickGeneratorPage() {
       )}
 
       {/* Generate + Play buttons */}
-      <div className="flex gap-3 mb-8">
+      <div className="flex gap-3 mb-4">
         <Button size="lg" onClick={generate} className="flex-1">
           Lickを生成
         </Button>
         {lick && (
           <Button size="lg" variant="secondary" onClick={playLick} disabled={isPlaying}>
-            {isPlaying ? "⏸ 演奏中..." : "▶ 演奏 (4拍カウント)"}
+            {isPlaying ? "⏸ 演奏中..." : "▶ 演奏"}
           </Button>
         )}
       </div>
+
+      {/* Count-in toggle */}
+      {lick && (
+        <div className="flex items-center justify-end gap-2 mb-6">
+          <span className="text-jazz-muted text-xs">4拍カウントイン</span>
+          <button
+            onClick={() => setCountIn((v) => !v)}
+            className={`relative w-10 h-6 rounded-full transition-colors ${
+              countIn ? "bg-jazz-accent" : "bg-white/10"
+            }`}
+          >
+            <span
+              className={`absolute top-1 left-1 w-4 h-4 rounded-full bg-white shadow transition-transform ${
+                countIn ? "translate-x-4" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+      )}
 
       {/* Score */}
       {lick && (
