@@ -67,8 +67,8 @@ export function LickScoreViewer({ notes, startBeat = 0, totalBeats = 4, height =
           voice.setMode(Voice.Mode.SOFT);
           voice.addTickables(allNotes);
 
-          // Beat-aligned beams
-          const beams = createBeatAlignedBeams(mLick, mMain, Beam);
+          // Beat-aligned beams (measure 0 starts at startBeat offset, others at 0)
+          const beams = createBeatAlignedBeams(mLick, mMain, Beam, m === 0 ? startBeat : 0);
           // Tuplets for triplet groups
           const tuplets = buildTuplets(mLick, mMain, Tuplet);
 
@@ -163,11 +163,16 @@ function makeRests(startBeat: number, StaveNote: any): any[] {
 
 /**
  * Beam pairs of 8th/16th notes that start at on-beat (integer beat) positions.
- * Off-beat pickup notes are left as single flagged notes.
+ * initialBeatPos lets the first measure start at startBeat so pickup notes stay flagged.
  */
-function createBeatAlignedBeams(lickNotes: LickNote[], staveNotes: any[], Beam: any): any[] {
+function createBeatAlignedBeams(
+  lickNotes: LickNote[],
+  staveNotes: any[],
+  Beam: any,
+  initialBeatPos = 0,
+): any[] {
   const beams: any[] = [];
-  let beatPos = 0;
+  let beatPos = initialBeatPos;
   let i = 0;
 
   while (i < lickNotes.length) {
